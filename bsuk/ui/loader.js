@@ -8,7 +8,7 @@
 
 "use strict";
 
-const { createElement: h } = React;
+var { createElement: h } = React;
 
 // ── Skeleton card ────────────────────────────────────────────
 window.SkeletonCard = function SkeletonCard({ rows = 3, style = {} }) {

@@ -6,7 +6,7 @@
 
 "use strict";
 
-const { createElement: h, useState } = React;
+var { createElement: h, useState } = React;
 
 window.MessageComposerTab = function MessageComposerTab({ suk }) {
   const [msgType,   setMsgType]   = useState("");

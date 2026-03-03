@@ -7,7 +7,7 @@
 
 "use strict";
 
-const { createElement: h, useState } = React;
+var { createElement: h, useState } = React;
 
 window.SatsangBookingForm = function SatsangBookingForm({ api, onBooked }) {
   const [form, setForm] = useState({

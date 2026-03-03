@@ -9,7 +9,7 @@
 
 "use strict";
 
-const { createElement: h } = React;
+var { createElement: h } = React;
 
 // ── Shared: build plain-text prayer share message ────────────
 window.buildShareMsgPlain = (c) => {

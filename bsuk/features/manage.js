@@ -7,7 +7,7 @@
 
 "use strict";
 
-const { createElement: h, useState } = React;
+var { createElement: h, useState } = React;
 
 // ════════════════════════════════════════════════════════════
 //  RETRIEVE BOOKING TAB
@@ -71,7 +71,7 @@ window.RetrieveBookingTab = function RetrieveBookingTab({ api, sukKey }) {
   const handleUpdateAddress = async (id, newAddress) => {
     setSavingAddress(true);
     try {
-      const r = await api.prayer.book({ action:"updateAddress", id, place:newAddress });
+      const r = await api.prayer.updateAddress(id, newAddress);
       if (r.success) {
         setResults(prev => prev.map(b => b.id===id ? { ...b, place:newAddress } : b));
         setAddressMsg(prev => ({ ...prev, [id]:"✅ Address updated!" }));
