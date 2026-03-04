@@ -3,9 +3,9 @@
 //
 //  New in this version:
 //  1. Tap any photo → full-screen lightbox with prev/next arrows
-//  2. Share generates a rich WhatsApp-ready message with photo
-//     caption, uploader, date + gallery deep-link so people
-//     tap it and land directly on the gallery
+//  2. Share sends the actual photo file to WhatsApp AND
+//     copies the rich text + gallery link to clipboard so
+//     the sender can paste it in the same chat
 // ============================================================
 
 import React from 'react'
@@ -62,8 +62,8 @@ export default function GalleryTab({
     } catch (e) { return '' }
   })()
 
-  // ── Share: rich message with thumbnail description ─────────
-  const handlePhotoShare = (p) => {
+  // ── Share: image file + rich text copied to clipboard ──────
+  const handlePhotoShare = async (p) => {
     const sukName = state.ACTIVE_SUK ? sukLabel(state.ACTIVE_SUK) : 'Satsang Upayojana Kendra'
     const dateStr = p.date ? cleanPhotoDate(p.date) : ''
 
@@ -75,7 +75,7 @@ export default function GalleryTab({
         ? `🪷 *${p.caption}*`
         : '🪷 *A sacred prayer moment*',
       p.uploader ? `🙏 Shared by: ${p.uploader}` : '',
-      dateStr    ? `📅 ${dateStr}`                 : '',
+      dateStr    ? `📅 ${dateStr}`                : '',
       '━━━━━━━━━━━━━━━━━━━━',
       '',
       '📸 *Tap below to view the full Prayer Photo Gallery:*',
@@ -84,9 +84,44 @@ export default function GalleryTab({
       `✨ Come, witness the divine moments captured by our Satsang family 🙏`,
       '',
       `🪷 *${sukName}*`,
-    ].filter(l => l !== null && l !== undefined && !(l === '' && false))
+    ].filter(l => l !== null && l !== undefined)
      .join('\n')
 
+    // ── Step 1: copy rich text to clipboard immediately ────────
+    // Must happen in the same user-gesture tick, before any async work
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch (_) {
+      // Clipboard failed silently — still attempt image share
+    }
+
+    // ── Step 2: fetch image and share as a File ────────────────
+    if (navigator.share && navigator.canShare) {
+      try {
+        const res  = await fetch(p.url)
+        const blob = await res.blob()
+
+        const ext      = blob.type.split('/')[1] || 'jpg'
+        const safeName = (p.caption || 'prayer-photo')
+          .replace(/[^a-z0-9]/gi, '-').toLowerCase().slice(0, 40)
+        const file = new File([blob], `${safeName}.${ext}`, { type: blob.type })
+
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            title: '🌸 Jayguru — Prayer Gallery',
+            files: [file],
+          })
+          // Nudge shown after share sheet closes
+          alert('✅ Photo shared!\n\n📋 The message & gallery link were copied to your clipboard — paste them in the chat too 🙏')
+          return
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') return // user cancelled, do nothing
+        // fetch/share failed — fall through to text-only
+      }
+    }
+
+    // ── Fallback: text-only share (desktop / unsupported browsers) ──
     if (navigator.share) {
       navigator.share({ title: '🌸 Jayguru — Prayer Gallery', text }).catch(() => {})
     } else if (navigator.clipboard?.writeText) {
