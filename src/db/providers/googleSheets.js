@@ -1,14 +1,5 @@
 // ============================================================
 //  DB PROVIDER — Google Apps Script + Google Sheets
-//  ─────────────────────────────────────────────────────────
-//  Unified cancel logic: booking and satsang use IDENTICAL
-//  post() calls, differentiated only by sheetName.
-//
-//  KEY FIX: Google Apps Script (GAS) redirects POST → GET (302).
-//  fetch() follows the redirect but drops the POST body.
-//  Solution: ALL params go in BOTH the URL query string AND
-//  the body, so GAS can read them via e.parameter (URL)
-//  regardless of body parsing.
 // ============================================================
 
 const SHEET = {
@@ -55,29 +46,40 @@ function makeCacheKey(action, sheetName) {
 
 // ── HTTP helpers ──────────────────────────────────────────
 //
-// ALL params go in the URL query string.
-// GAS reads e.parameter (URL) reliably even after a 302 redirect.
-// The JSON body is sent as a fallback for GAS doPost(e.postData).
+// GET:  params go in URL query string (normal)
+// POST: apiKey goes ONLY in the JSON body with Content-Type header
+//       so the Worker can parse it with request.json()
+//       action/sheetName/id also go in URL so they survive
+//       GAS's internal 302 redirect that drops the body
 
-async function gasRequest(method, params) {
-  const payload = { ...params, apiKey: _apiKey }
-  const query   = new URLSearchParams(payload).toString()
-  const options = method === 'GET'
-    ? { method: 'GET' }
-    : { method: 'POST', redirect: 'follow', body: JSON.stringify(payload) }
-
-  const res  = await fetch(`${_scriptUrl}?${query}`, options)
-  const text = await res.text()
-  try {
-    return JSON.parse(text)
-  } catch {
-    console.error('GAS non-JSON response:', text.slice(0, 300))
-    return { success: false, message: 'Server returned an unexpected response. Please try again.' }
-  }
+async function gasGet(params) {
+  const query = new URLSearchParams({ ...params, apiKey: _apiKey, _cb: Date.now() }).toString()
+  const res   = await fetch(`${_scriptUrl}?${query}`)
+  const text  = await res.text()
+  try { return JSON.parse(text) }
+  catch { return { success: false, message: 'Server error. Please try again.' } }
 }
 
-const gasGet  = (params) => gasRequest('GET',  params)
-const gasPost = (params) => gasRequest('POST', params)
+async function gasPost(params) {
+  const { apiKey: _ignored, ...rest } = params
+  const body = { ...rest, apiKey: _apiKey }
+
+  // Routing params in URL survive GAS 302 redirect
+  const urlParams = new URLSearchParams({
+    action:    body.action    || '',
+    sheetName: body.sheetName || 'Bookings',
+    id:        body.id        || '',
+  })
+
+  const res  = await fetch(`${_scriptUrl}?${urlParams}`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },  // ← required for Worker request.json()
+    body:    JSON.stringify(body),
+  })
+  const text = await res.text()
+  try { return JSON.parse(text) }
+  catch { return { success: false, message: 'Server error. Please try again.' } }
+}
 
 // ── Cached GET ────────────────────────────────────────────
 
@@ -85,7 +87,7 @@ async function getCached(action, sheetName) {
   const cacheKey = makeCacheKey(action, sheetName)
   const local    = localGet(cacheKey)
   if (local) return local
-  const data = await gasGet({ action, sheetName, _cb: Date.now() })
+  const data = await gasGet({ action, sheetName })
   localSet(cacheKey, data)
   return data
 }
@@ -114,7 +116,7 @@ export const googleSheetsProvider = {
       .then(res => { localBust(makeCacheKey('getAll', SHEET.BOOKINGS)); return res }),
   },
 
-  // ── Satsang bookings — IDENTICAL pattern to bookings above ──
+  // ── Satsang bookings — identical pattern ─────────────────
 
   satsang: {
     getAll: () => getCached('getAll', SHEET.SATSANG),
