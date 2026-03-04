@@ -1,5 +1,5 @@
 import React from 'react'
-import { SUK_CONFIG, sukLabel } from '../config/sukConfig.js'
+import { SUK_CONFIG, sukLabel } from '../../config/sukConfig.js'
 
 function SUKSearchDropdown({ selected, onSelect }) {
   const allSuks = React.useMemo(() => Object.values(SUK_CONFIG), []);
