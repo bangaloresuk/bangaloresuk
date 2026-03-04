@@ -1410,7 +1410,7 @@ function App({ onChangeSuk, deepLink = {} }) {
                                   {b.name}
                                 </div>
                                 <div style={{ fontSize:12, color:"#d97706", fontWeight:700, marginTop:2 }}>
-                                  📅 {formatDateWithDay(b.date)} · ⏰ {b.time}
+                                  📅 {formatDateWithDay(b.date)} · ⏰ {cleanTime(b.time)}
                                 </div>
                                 {b.venue && <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>📍 {b.venue}</div>}
                               </div>
