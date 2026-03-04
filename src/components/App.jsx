@@ -284,7 +284,8 @@ function App({ onChangeSuk, deepLink = {} }) {
         setShareMsg(errMsg);
       }
     } catch(e) {
-      const errMsg = "❌ Network error.";
+      console.error("❌ Booking cancel error:", e);
+      const errMsg = "❌ Could not cancel: " + (e?.message || "Please try again.");
       setCancelMsg(errMsg);
       setShareMsg(errMsg);
     }
@@ -444,7 +445,8 @@ function App({ onChangeSuk, deepLink = {} }) {
         setShareMsg(errMsg);
       }
     } catch(e) {
-      const errMsg = "❌ Network error. Please try again.";
+      console.error("❌ Satsang cancel error:", e);
+      const errMsg = "❌ Could not cancel: " + (e?.message || "Please try again.");
       setCancelMsg(errMsg);
       setShareMsg(errMsg);
     }
