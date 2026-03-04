@@ -242,23 +242,39 @@ function App({ onChangeSuk, deepLink = {} }) {
   };
 
   // ── Cancel lookup by mobile ───────────────────────────────
-  const handleCancelLookup = () => {
+  const handleCancelLookup = async () => {
     setCancelMsg("");
     setCancelResults(null);
     if (!/^[0-9]{10}$/.test(cancelMobile.trim())) {
       setCancelMsg("⚠️ Please enter a valid 10-digit mobile number.");
       return;
     }
-    const mob = cancelMobile.trim();
-    const prayerFound  = bookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"prayer" }));
-    const satsangFound = satsangBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"satsang" }));
-    const combined = [...prayerFound, ...satsangFound].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
-    if (combined.length === 0) {
-      setCancelMsg("❌ No bookings found for this mobile number.");
-      setCancelResults([]);
-    } else {
-      setCancelResults(combined);
+    // Always fetch fresh data from server — never rely on stale local cache
+    setCancelMsg("🔍 Searching...");
+    setBookingsReady(false);
+    setSatsangReady(false);
+    try {
+      const [bd, sd] = await Promise.all([api.getAll(), satsangApi.getAll()]);
+      const freshBookings = (bd.success && Array.isArray(bd.data)) ? bd.data : bookings;
+      const freshSatsang  = (sd.success && Array.isArray(sd.data)) ? sd.data : satsangBookings;
+      if (bd.success && Array.isArray(bd.data)) setBookings(bd.data);
+      if (sd.success && Array.isArray(sd.data)) setSatsangBookings(sd.data);
+      const mob = cancelMobile.trim();
+      const prayerFound  = freshBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"prayer" }));
+      const satsangFound = freshSatsang.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"satsang" }));
+      const combined = [...prayerFound, ...satsangFound].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+      setCancelMsg("");
+      if (combined.length === 0) {
+        setCancelMsg("❌ No bookings found for this mobile number.");
+        setCancelResults([]);
+      } else {
+        setCancelResults(combined);
+      }
+    } catch(e) {
+      setCancelMsg("❌ Could not fetch bookings. Please try again.");
     }
+    setBookingsReady(true);
+    setSatsangReady(true);
   };
 
   const handleCancelBooking = async (id) => {
@@ -1111,8 +1127,12 @@ function App({ onChangeSuk, deepLink = {} }) {
                   const sel = form.date === dateStr;
                   chips2.push(
                     <button key={dateStr}
-                      onClick={() => { setError(""); setForm({...form, date:dateStr, time:""}); }}
-                      disabled={bothTaken}
+                      onClick={() => {
+                        setError("");
+                        setForm({...form, date:dateStr, time:""});
+                        if (bothTaken) triggerError("🚫 Both Morning and Evening slots are fully booked for this date. Please choose another date.");
+                      }}
+                      disabled={false}
                       style={{ display:"flex", flexDirection:"column", alignItems:"center",
                         padding:"8px 6px", borderRadius:12, flexShrink:0,
                         border:`2px solid ${sel?"#1d4ed8":bothTaken?"#fca5a5":mTaken||eTaken?"#fcd34d":"rgba(59,130,246,0.18)"}`,

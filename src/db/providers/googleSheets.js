@@ -8,7 +8,10 @@ const SHEET = {
   PHOTOS:   'Photos',
 }
 
-const LOCAL_TTL = 60 * 1000  // 60 seconds
+// localStorage cache disabled — always fetch fresh from server.
+// Cloudflare Worker KV handles server-side caching (60s TTL).
+// This ensures cancel lookup always sees the latest data.
+const LOCAL_TTL = 0
 
 let _scriptUrl = ''
 let _apiKey    = ''
