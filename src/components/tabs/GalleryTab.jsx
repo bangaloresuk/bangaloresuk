@@ -1,16 +1,11 @@
 // ============================================================
 //  GalleryTab — Upload & browse prayer photos
 //
-//  Props:
-//    isConfigured   {boolean}  — false = show "not configured" warning
-//    photos         {array}    — photo list from parent
-//    photosLoading  {boolean}
-//    photoUpload    {object}   — { file, preview, caption, uploader }
-//    setPhotoUpload {function}
-//    photoMsg       {string}   — success/error message
-//    setPhotoMsg    {function}
-//    photoUploading {boolean}
-//    onUpload       {function} — called when Upload button clicked
+//  New in this version:
+//  1. Tap any photo → full-screen lightbox with prev/next arrows
+//  2. Share generates a rich WhatsApp-ready message with photo
+//     caption, uploader, date + gallery deep-link so people
+//     tap it and land directly on the gallery
 // ============================================================
 
 import React from 'react'
@@ -26,6 +21,28 @@ export default function GalleryTab({
   photoUploading,
   onUpload,
 }) {
+
+  // ── Lightbox state ─────────────────────────────────────────
+  const [lightbox, setLightbox] = React.useState(null) // index or null
+
+  const openLightbox  = (i) => setLightbox(i)
+  const closeLightbox = ()  => setLightbox(null)
+  const prevPhoto     = (e) => { e.stopPropagation(); setLightbox(i => Math.max(0, i - 1)) }
+  const nextPhoto     = (e) => { e.stopPropagation(); setLightbox(i => Math.min(photos.length - 1, i + 1)) }
+
+  // Keyboard nav
+  React.useEffect(() => {
+    if (lightbox === null) return
+    const handler = (e) => {
+      if (e.key === 'ArrowLeft')  setLightbox(i => Math.max(0, i - 1))
+      if (e.key === 'ArrowRight') setLightbox(i => Math.min(photos.length - 1, i + 1))
+      if (e.key === 'Escape')     closeLightbox()
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [lightbox, photos.length])
+
+  // ── File picker ────────────────────────────────────────────
   const handleFileChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -36,41 +53,187 @@ export default function GalleryTab({
     reader.readAsDataURL(file)
   }
 
+  // ── Gallery deep-link ──────────────────────────────────────
+  const galleryUrl = (() => {
+    try {
+      const base   = window.location.origin + window.location.pathname
+      const sukKey = state.ACTIVE_SUK ? state.ACTIVE_SUK.key : ''
+      return `${base}?suk=${encodeURIComponent(sukKey)}&open=gallery`
+    } catch (e) { return '' }
+  })()
+
+  // ── Share: rich message with thumbnail description ─────────
   const handlePhotoShare = (p) => {
-    const galleryUrl = (() => {
-      try {
-        const base   = window.location.origin + window.location.pathname
-        const sukKey = state.ACTIVE_SUK ? state.ACTIVE_SUK.key : ''
-        return `${base}?suk=${encodeURIComponent(sukKey)}&open=gallery`
-      } catch (e) { return '' }
-    })()
+    const sukName = state.ACTIVE_SUK ? sukLabel(state.ACTIVE_SUK) : 'Satsang Upayojana Kendra'
+    const dateStr = p.date ? cleanPhotoDate(p.date) : ''
+
     const text = [
-      '🌸 *Jayguru* 🙏', '',
-      p.caption ? p.caption : 'A sacred prayer moment 🪷',
-      p.uploader ? `— 🙏 ${p.uploader}` : '',
-      '', '📸 View the Prayer Photo Gallery:', galleryUrl, '',
-      `🙏 *${state.ACTIVE_SUK ? sukLabel(state.ACTIVE_SUK) : 'Satsang Upayojana Kendra'}*`,
-    ].filter(Boolean).join('\n')
+      '🌸 *Jayguru* 🙏',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━',
+      p.caption
+        ? `🪷 *${p.caption}*`
+        : '🪷 *A sacred prayer moment*',
+      p.uploader ? `🙏 Shared by: ${p.uploader}` : '',
+      dateStr    ? `📅 ${dateStr}`                 : '',
+      '━━━━━━━━━━━━━━━━━━━━',
+      '',
+      '📸 *Tap below to view the full Prayer Photo Gallery:*',
+      galleryUrl,
+      '',
+      `✨ Come, witness the divine moments captured by our Satsang family 🙏`,
+      '',
+      `🪷 *${sukName}*`,
+    ].filter(l => l !== null && l !== undefined && !(l === '' && false))
+     .join('\n')
 
     if (navigator.share) {
       navigator.share({ title: '🌸 Jayguru — Prayer Gallery', text }).catch(() => {})
     } else if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(text)
-        .then(() => alert('✅ Copied! Paste it anywhere.'))
+        .then(() => alert('✅ Message copied! Paste it in WhatsApp to share 🙏'))
         .catch(() => prompt('Copy this:', text))
     } else {
       prompt('Copy this:', text)
     }
   }
 
+  const activeLightboxPhoto = lightbox !== null ? photos[lightbox] : null
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
+      {/* ── LIGHTBOX ── */}
+      {lightbox !== null && activeLightboxPhoto && (
+        <div
+          onClick={closeLightbox}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(5,10,30,0.95)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+            padding: '16px',
+            animation: 'fadeIn 0.2s ease',
+          }}
+        >
+          {/* Close button */}
+          <button
+            onClick={closeLightbox}
+            style={{
+              position: 'absolute', top: 16, right: 16,
+              width: 40, height: 40, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.12)', border: 'none',
+              color: '#fff', fontSize: 20, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 10,
+            }}>✕</button>
+
+          {/* Counter */}
+          <div style={{
+            position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)',
+            color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 700,
+            letterSpacing: '1px',
+          }}>
+            {lightbox + 1} / {photos.length}
+          </div>
+
+          {/* Prev arrow */}
+          <button
+            onClick={prevPhoto}
+            disabled={lightbox === 0}
+            style={{
+              position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+              width: 44, height: 44, borderRadius: '50%',
+              background: lightbox === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
+              border: 'none', color: lightbox === 0 ? 'rgba(255,255,255,0.2)' : '#fff',
+              fontSize: 22, cursor: lightbox === 0 ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 10,
+            }}>‹</button>
+
+          {/* Photo */}
+          <div onClick={e => e.stopPropagation()} style={{
+            maxWidth: '100%', maxHeight: 'calc(100vh - 160px)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          }}>
+            <img
+              src={activeLightboxPhoto.url}
+              alt={activeLightboxPhoto.caption || 'Prayer'}
+              style={{
+                maxWidth: '100%',
+                maxHeight: 'calc(100vh - 200px)',
+                objectFit: 'contain',
+                borderRadius: 14,
+                boxShadow: '0 8px 48px rgba(0,0,0,0.6)',
+              }}
+            />
+
+            {/* Caption bar */}
+            {(activeLightboxPhoto.caption || activeLightboxPhoto.uploader || activeLightboxPhoto.date) && (
+              <div style={{
+                background: 'rgba(255,255,255,0.08)',
+                borderRadius: 12, padding: '10px 16px',
+                textAlign: 'center', maxWidth: 400, width: '100%',
+              }}>
+                {activeLightboxPhoto.caption && (
+                  <div style={{ color: '#fff', fontSize: 14, fontWeight: 700, marginBottom: 4 }}>
+                    🪷 {activeLightboxPhoto.caption}
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
+                  {activeLightboxPhoto.uploader && (
+                    <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 12 }}>
+                      🙏 {activeLightboxPhoto.uploader}
+                    </span>
+                  )}
+                  {activeLightboxPhoto.date && (
+                    <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
+                      📅 {cleanPhotoDate(activeLightboxPhoto.date)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Share button inside lightbox */}
+            <button
+              onClick={() => handlePhotoShare(activeLightboxPhoto)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                padding: '11px 28px', borderRadius: 24, border: 'none',
+                background: 'linear-gradient(135deg,#25D366,#128C7E)',
+                color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer',
+                boxShadow: '0 4px 18px rgba(37,211,102,0.4)',
+              }}>
+              <span style={{ fontSize: 18 }}>💬</span> Share on WhatsApp
+            </button>
+          </div>
+
+          {/* Next arrow */}
+          <button
+            onClick={nextPhoto}
+            disabled={lightbox === photos.length - 1}
+            style={{
+              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+              width: 44, height: 44, borderRadius: '50%',
+              background: lightbox === photos.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
+              border: 'none',
+              color: lightbox === photos.length - 1 ? 'rgba(255,255,255,0.2)' : '#fff',
+              fontSize: 22,
+              cursor: lightbox === photos.length - 1 ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              zIndex: 10,
+            }}>›</button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="card" style={{ textAlign: 'center', padding: '22px 16px 18px' }}>
-        <div style={{ fontSize: 44, marginBottom: 8,
+        <div style={{
+          fontSize: 44, marginBottom: 8,
           filter: 'drop-shadow(0 0 18px rgba(255,160,200,0.5))',
-          animation: 'floatEmoji 3s ease-in-out infinite alternate' }}>🌸</div>
+          animation: 'floatEmoji 3s ease-in-out infinite alternate',
+        }}>🌸</div>
         <div style={{ fontFamily: "'Cinzel',serif", color: '#1e3a8a', fontSize: 18, fontWeight: 800, marginBottom: 4 }}>
           Prayer Photo Gallery
         </div>
@@ -180,10 +343,43 @@ export default function GalleryTab({
                 border: '1px solid rgba(59,130,246,0.15)',
                 background: 'rgba(239,246,255,0.4)',
                 display: 'flex', flexDirection: 'column',
-              }}>
-                <img src={p.url} alt={p.caption || 'Prayer'} loading="lazy"
-                  style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', display: 'block' }} />
+                boxShadow: '0 2px 8px rgba(29,78,216,0.07)',
+                transition: 'transform 0.15s, box-shadow 0.15s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 18px rgba(29,78,216,0.14)' }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(29,78,216,0.07)' }}
+              >
+                {/* Tappable photo — opens lightbox */}
+                <div
+                  onClick={() => openLightbox(i)}
+                  style={{ position: 'relative', cursor: 'zoom-in' }}
+                >
+                  <img
+                    src={p.url}
+                    alt={p.caption || 'Prayer'}
+                    loading="lazy"
+                    style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', display: 'block' }}
+                  />
+                  {/* Expand hint overlay */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.35) 0%, transparent 50%)',
+                    display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end',
+                    padding: '8px',
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                    onMouseLeave={e => e.currentTarget.style.opacity = '0'}
+                  >
+                    <span style={{
+                      background: 'rgba(255,255,255,0.2)', borderRadius: 6,
+                      padding: '3px 7px', fontSize: 11, color: '#fff', fontWeight: 700,
+                    }}>🔍 View</span>
+                  </div>
+                </div>
 
+                {/* Caption */}
                 {(p.caption || p.uploader || p.date) && (
                   <div style={{ padding: '8px 10px 4px' }}>
                     {p.caption && (
@@ -202,16 +398,22 @@ export default function GalleryTab({
                   </div>
                 )}
 
-                <button onClick={() => handlePhotoShare(p)} style={{
-                  marginTop: 'auto', padding: 8, border: 'none',
-                  borderTop: '1px solid rgba(59,130,246,0.08)',
-                  background: 'transparent', cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  gap: 5, fontSize: 11, fontWeight: 700, color: 'rgba(29,78,216,0.55)',
-                }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(29,78,216,0.05)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                  <span style={{ fontSize: 14 }}>📤</span> Share
+                {/* Share button — WhatsApp green */}
+                <button
+                  onClick={() => handlePhotoShare(p)}
+                  style={{
+                    marginTop: 'auto', padding: '9px 8px', border: 'none',
+                    borderTop: '1px solid rgba(59,130,246,0.08)',
+                    background: 'linear-gradient(135deg,rgba(37,211,102,0.12),rgba(18,140,126,0.08))',
+                    cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: 5, fontSize: 11, fontWeight: 800,
+                    color: '#128C7E', transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(37,211,102,0.2)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'linear-gradient(135deg,rgba(37,211,102,0.12),rgba(18,140,126,0.08))'}
+                >
+                  <span style={{ fontSize: 14 }}>💬</span> Share
                 </button>
               </div>
             ))}
