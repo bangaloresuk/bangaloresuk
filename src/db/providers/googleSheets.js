@@ -1,11 +1,9 @@
 // ============================================================
 //  DB PROVIDER — Google Apps Script + Google Sheets
 //  ─────────────────────────────────────────────────────────
-//  Implements the standard DB interface using Google Sheets
-//  as the backend via a deployed Apps Script web app.
-//
-//  To configure: call googleSheetsProvider.configure({ scriptUrl, apiKey })
-//  This is called automatically by AppShell when a SUK is selected.
+//  Level 1: Cloudflare Worker KV cache (server side, 60s TTL)
+//  Level 2: localStorage cache (browser side, 60s TTL)
+//  Together: first load ~1s, repeat loads instant
 // ============================================================
 
 const SHEET = {
@@ -14,8 +12,39 @@ const SHEET = {
   PHOTOS:   'Photos',
 }
 
+const LOCAL_TTL = 60 * 1000  // 60 seconds in ms
+
 let _scriptUrl = ''
 let _apiKey    = ''
+
+// ── Level 2: localStorage cache helpers ──────────────────────
+
+function localGet(key) {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    const { data, timestamp } = JSON.parse(raw)
+    if (Date.now() - timestamp > LOCAL_TTL) {
+      localStorage.removeItem(key)
+      return null
+    }
+    return data
+  } catch {
+    return null
+  }
+}
+
+function localSet(key, data) {
+  try {
+    localStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now() }))
+  } catch {
+    // localStorage full or unavailable — silently skip
+  }
+}
+
+function localBust(key) {
+  try { localStorage.removeItem(key) } catch {}
+}
 
 // ── Internal HTTP helpers ─────────────────────────────────────
 
@@ -33,6 +62,23 @@ async function post(body) {
   return res.json()
 }
 
+// ── Cached GET — checks localStorage first, then Worker KV ───
+
+async function getCached(params) {
+  const cacheKey = `suk:${_apiKey}:${params.action}`
+
+  // Level 2: check localStorage first (instant)
+  const local = localGet(cacheKey)
+  if (local) return local
+
+  // Level 1: Worker KV cache handles this if localStorage misses
+  const data = await get(params)
+
+  // Store in localStorage for next time
+  localSet(cacheKey, data)
+  return data
+}
+
 // ── Provider object — implements the standard DB interface ────
 
 export const googleSheetsProvider = {
@@ -46,24 +92,41 @@ export const googleSheetsProvider = {
   // ── Prayer bookings ───────────────────────────────────────
 
   bookings: {
-    getAll:        ()           => get({ action: 'getAll' }),
-    add:           (data)       => post({ action: 'add', ...data }),
-    cancel:        (id)         => post({ action: 'delete', id }),
-    updateAddress: (id, place)  => post({ action: 'updateAddress', id, place }),
+    getAll: () => getCached({ action: 'getAll' }),  // ← cached
+
+    add: (data) => post({ action: 'add', ...data }).then(res => {
+      localBust(`suk:${_apiKey}:getAll`)  // bust cache on new booking
+      return res
+    }),
+
+    cancel: (id) => post({ action: 'delete', id }).then(res => {
+      localBust(`suk:${_apiKey}:getAll`)  // bust cache on cancel
+      return res
+    }),
+
+    updateAddress: (id, place) => post({ action: 'updateAddress', id, place }),
   },
 
   // ── Satsang bookings ─────────────────────────────────────
 
   satsang: {
-    getAll: ()     => get({ action: 'getAll', sheetName: SHEET.SATSANG }),
-    add:    (data) => post({ action: 'add',   sheetName: SHEET.SATSANG, ...data }),
-    cancel: (id)   => post({ action: 'delete', id, sheetName: SHEET.SATSANG }),
+    getAll: () => getCached({ action: 'getAll', sheetName: SHEET.SATSANG }),  // ← cached
+
+    add: (data) => post({ action: 'add', sheetName: SHEET.SATSANG, ...data }).then(res => {
+      localBust(`suk:${_apiKey}:getAll`)
+      return res
+    }),
+
+    cancel: (id) => post({ action: 'delete', id, sheetName: SHEET.SATSANG }).then(res => {
+      localBust(`suk:${_apiKey}:getAll`)
+      return res
+    }),
   },
 
   // ── Photo gallery ─────────────────────────────────────────
 
   photos: {
-    getAll: () => get({ action: 'getPhotos' }),
+    getAll: () => getCached({ action: 'getPhotos' }),  // ← cached
 
     upload: (file, caption = '', uploader = 'Anonymous') =>
       new Promise((resolve, reject) => {
@@ -77,6 +140,7 @@ export const googleSheetsProvider = {
               caption,
               uploader,
             })
+            localBust(`suk:${_apiKey}:getPhotos`)  // bust photo cache
             resolve(result)
           } catch (err) {
             reject(err)
