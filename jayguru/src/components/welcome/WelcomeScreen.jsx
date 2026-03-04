@@ -1,5 +1,5 @@
 import React from 'react'
-import { SUK_CONFIG, sukLabel } from '../../config/sukConfig.js'
+import { SUK_CONFIG, sukLabel } from '../config/sukConfig.js'
 import SUKSearchDropdown from './SUKSearchDropdown.jsx'
 
 function WelcomeScreen({ onSelect }) {
