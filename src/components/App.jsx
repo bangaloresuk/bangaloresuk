@@ -250,24 +250,21 @@ function App({ onChangeSuk, deepLink = {} }) {
       return;
     }
     const mob = cancelMobile.trim();
-    setCancelMsg("🔍 Fetching latest data...");
-    // Bust localStorage cache so fetchBookings/fetchSatsangBookings always go to server
-    try { localStorage.removeItem(`suk:${cancelMobile}:getAll:Bookings`) } catch(e) {}
-    try { localStorage.removeItem(`suk:${cancelMobile}:getAll:Satsang`) } catch(e) {}
-    // Use the same fetch functions the app uses — avoids any CORS/auth issues
+    // Show full loader and fetch fresh from Google Sheets every time
+    setBookingsReady(false);
+    setSatsangReady(false);
     try {
       const [bd, sd] = await Promise.all([
         api.getAll(),
-        satsangApi.getAll()
+        satsangApi.getAll(),
       ]);
-      const freshBookings = (bd && bd.success && Array.isArray(bd.data)) ? bd.data : bookings;
-      const freshSatsang  = (sd && sd.success && Array.isArray(sd.data)) ? sd.data : satsangBookings;
-      if (bd && bd.success && Array.isArray(bd.data)) setBookings(bd.data);
-      if (sd && sd.success && Array.isArray(sd.data)) setSatsangBookings(sd.data);
+      const freshBookings = (bd && bd.success && Array.isArray(bd.data)) ? bd.data : [];
+      const freshSatsang  = (sd && sd.success && Array.isArray(sd.data)) ? sd.data : [];
+      setBookings(freshBookings);
+      setSatsangBookings(freshSatsang);
       const prayerFound  = freshBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"prayer" }));
       const satsangFound = freshSatsang.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"satsang" }));
       const combined = [...prayerFound, ...satsangFound].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
-      setCancelMsg("");
       if (combined.length === 0) {
         setCancelMsg("❌ No bookings found for this mobile number.");
         setCancelResults([]);
@@ -275,17 +272,10 @@ function App({ onChangeSuk, deepLink = {} }) {
         setCancelResults(combined);
       }
     } catch(e) {
-      // Fallback: search existing in-memory data if fetch fails
-      const prayerFound  = bookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"prayer" }));
-      const satsangFound = satsangBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"satsang" }));
-      const combined = [...prayerFound, ...satsangFound].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
-      setCancelMsg("");
-      if (combined.length === 0) {
-        setCancelMsg("❌ No bookings found for this mobile number.");
-        setCancelResults([]);
-      } else {
-        setCancelResults(combined);
-      }
+      setCancelMsg("❌ Network error. Please try again.");
+    } finally {
+      setBookingsReady(true);
+      setSatsangReady(true);
     }
   };
 
@@ -1141,8 +1131,8 @@ function App({ onChangeSuk, deepLink = {} }) {
                     <button key={dateStr}
                       onClick={() => {
                         setError("");
+                        if (bothTaken) { triggerError("🚫 Both Morning & Evening slots are fully booked for this date. Please choose another date."); return; }
                         setForm({...form, date:dateStr, time:""});
-                        if (bothTaken) triggerError("🚫 Both Morning and Evening slots are fully booked for this date. Please choose another date.");
                       }}
                       disabled={false}
                       style={{ display:"flex", flexDirection:"column", alignItems:"center",

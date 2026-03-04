@@ -8,10 +8,7 @@ const SHEET = {
   PHOTOS:   'Photos',
 }
 
-// localStorage cache disabled — always fetch fresh from server.
-// Cloudflare Worker KV handles server-side caching (60s TTL).
-// This ensures cancel lookup always sees the latest data.
-const LOCAL_TTL = 0
+const LOCAL_TTL = 60 * 1000  // 60 seconds
 
 let _scriptUrl = ''
 let _apiKey    = ''
@@ -84,15 +81,12 @@ async function gasPost(params) {
   catch { return { success: false, message: 'Server error. Please try again.' } }
 }
 
-// ── Cached GET ────────────────────────────────────────────
+// ── Always fetch fresh — no localStorage cache ───────────
+// Every getAll() goes directly to Google Sheets.
+// The loading overlay handles UX while data loads.
 
 async function getCached(action, sheetName) {
-  const cacheKey = makeCacheKey(action, sheetName)
-  const local    = localGet(cacheKey)
-  if (local) return local
-  const data = await gasGet({ action, sheetName })
-  localSet(cacheKey, data)
-  return data
+  return await gasGet({ action, sheetName })
 }
 
 // ── Provider ──────────────────────────────────────────────
