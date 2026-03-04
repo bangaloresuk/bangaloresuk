@@ -16,6 +16,7 @@ export const api = {
   getAll: ()              => db.bookings.getAll(),
   post:   (data)          => db.bookings.add(data),
   delete: (id)            => db.bookings.cancel(id),
+  cancel: (id)            => db.bookings.cancel(id),
   update: (id, place)     => db.bookings.updateAddress(id, place),
 }
 
@@ -23,6 +24,7 @@ export const satsangApi = {
   getAll: ()     => db.satsang.getAll(),
   post:   (data) => db.satsang.add(data),
   delete: (id)   => db.satsang.cancel(id),
+  cancel: (id)   => db.satsang.cancel(id),  // ← this was missing, App.jsx calls satsangApi.cancel()
 }
 
 export const photoApi = {
