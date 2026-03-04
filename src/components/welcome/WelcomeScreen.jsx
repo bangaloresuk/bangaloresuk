@@ -114,9 +114,9 @@ function WelcomeScreen({ onSelect }) {
             boxShadow: canLaunch ? "0 6px 24px rgba(29,78,216,0.3)" : "none",
           }}>
           {launching
-            ? `${activeSuk.emoji}  Entering ${sukLabel(activeSuk)}...`
+            ? `${activeSuk.emoji || '🪷'}  Entering ${sukLabel(activeSuk)}...`
             : canLaunch
-              ? `${activeSuk.emoji}  Open ${sukLabel(activeSuk)}`
+              ? `${activeSuk.emoji || '🪷'}  Open ${sukLabel(activeSuk)}`
               : "Select a Kendra to continue"}
         </button>
 
