@@ -249,17 +249,21 @@ function App({ onChangeSuk, deepLink = {} }) {
       setCancelMsg("⚠️ Please enter a valid 10-digit mobile number.");
       return;
     }
-    // Always fetch fresh data from server — never rely on stale local cache
-    setCancelMsg("🔍 Searching...");
-    setBookingsReady(false);
-    setSatsangReady(false);
+    const mob = cancelMobile.trim();
+    setCancelMsg("🔍 Fetching latest data...");
+    // Bust localStorage cache so fetchBookings/fetchSatsangBookings always go to server
+    try { localStorage.removeItem(`suk:${cancelMobile}:getAll:Bookings`) } catch(e) {}
+    try { localStorage.removeItem(`suk:${cancelMobile}:getAll:Satsang`) } catch(e) {}
+    // Use the same fetch functions the app uses — avoids any CORS/auth issues
     try {
-      const [bd, sd] = await Promise.all([api.getAll(), satsangApi.getAll()]);
-      const freshBookings = (bd.success && Array.isArray(bd.data)) ? bd.data : bookings;
-      const freshSatsang  = (sd.success && Array.isArray(sd.data)) ? sd.data : satsangBookings;
-      if (bd.success && Array.isArray(bd.data)) setBookings(bd.data);
-      if (sd.success && Array.isArray(sd.data)) setSatsangBookings(sd.data);
-      const mob = cancelMobile.trim();
+      const [bd, sd] = await Promise.all([
+        api.getAll(),
+        satsangApi.getAll()
+      ]);
+      const freshBookings = (bd && bd.success && Array.isArray(bd.data)) ? bd.data : bookings;
+      const freshSatsang  = (sd && sd.success && Array.isArray(sd.data)) ? sd.data : satsangBookings;
+      if (bd && bd.success && Array.isArray(bd.data)) setBookings(bd.data);
+      if (sd && sd.success && Array.isArray(sd.data)) setSatsangBookings(sd.data);
       const prayerFound  = freshBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"prayer" }));
       const satsangFound = freshSatsang.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"satsang" }));
       const combined = [...prayerFound, ...satsangFound].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
@@ -271,10 +275,18 @@ function App({ onChangeSuk, deepLink = {} }) {
         setCancelResults(combined);
       }
     } catch(e) {
-      setCancelMsg("❌ Could not fetch bookings. Please try again.");
+      // Fallback: search existing in-memory data if fetch fails
+      const prayerFound  = bookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"prayer" }));
+      const satsangFound = satsangBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"satsang" }));
+      const combined = [...prayerFound, ...satsangFound].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+      setCancelMsg("");
+      if (combined.length === 0) {
+        setCancelMsg("❌ No bookings found for this mobile number.");
+        setCancelResults([]);
+      } else {
+        setCancelResults(combined);
+      }
     }
-    setBookingsReady(true);
-    setSatsangReady(true);
   };
 
   const handleCancelBooking = async (id) => {
