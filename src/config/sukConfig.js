@@ -13,6 +13,8 @@
 //  Full feature list → DEFAULT_FEATURES below
 // ============================================================
 
+// Add this at the top
+const WORKER_URL = 'https://bangaloresuk-proxy.bangaloresuk.workers.dev'
 // ── Default feature flags — every SUK inherits these ─────────
 export const DEFAULT_FEATURES = {
   prayerBooking:   true,   // Morning / Evening prayer booking
@@ -35,8 +37,8 @@ export const SUK_CONFIG = {
     name:       'Bannerghatta Satsang Upayojana Kendra',
     shortName:  'Bannerghatta SUK',
     location:   'Bangalore South',
-    scriptUrl:  'https://script.google.com/macros/s/AKfycbzs9BbSc-OGjrUKFIOGOaqFYFTkiYUwVJeTxXx2CBTQy0LcJ-DM7o10R4PuBh51KC2G/exec',
-    apiKey:     'SUKsecret2024Bangalore',
+    scriptUrl:  WORKER_URL,
+    apiKey:     'bannerghatta',
     configured: true,
     features:   {},                         // uses all DEFAULT_FEATURES
   },
@@ -46,8 +48,8 @@ export const SUK_CONFIG = {
     name:       'Peenya 2nd Stage SUK',
     shortName:  'Peenya 2nd Stage SUK',
     location:   '',
-    scriptUrl:  'https://script.google.com/macros/s/AKfycby_v7lDp5kbvn4Jh3U6f9Sdwam0AY_6EV7KlI-tjBcVwDxFgS37108PmpPOF-G3lGFU/exec',
-    apiKey:     '1e267c88ee92686c6e78da0a1ba9eb26023410dc6e171241',
+    scriptUrl:  WORKER_URL,
+    apiKey:     'peenya-2nd-stage',
     configured: true,
     features:   { satsangBooking: false, messages: false },
   },
@@ -57,8 +59,8 @@ export const SUK_CONFIG = {
     name:       'Banashankari SUK',
     shortName:  'Banashankari SUK',
     location:   '',
-    scriptUrl:  'https://script.google.com/macros/s/AKfycbwaY9lrDbkir6S1vbnjoPNNprlvj0acv3Jqs2XGc11DszroiG6OHjff9I1FxZ8jM7ZUQQ/exec',
-    apiKey:     '1e267c88ee92686c6e78da0a1ba9eb26023410dc6e171241',
+    scriptUrl:  WORKER_URL,
+    apiKey:     'banashankari',
     configured: true,
     features:   { satsangBooking: false, messages: false },
   },
