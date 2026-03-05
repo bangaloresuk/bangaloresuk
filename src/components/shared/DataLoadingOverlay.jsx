@@ -5,7 +5,8 @@ import React from 'react'
 //  Each quote shows randomly on every loading screen.
 // ============================================================
 const QUOTES = [
-  { text: "Where action pursues desire, fulfilment appears immediately with a smile!", author: "Shree Shree Thakur Anukulchandra" }
+  { text: "Where action pursues desire, fulfilment appears immediately with a smile!", author: "Shree Shree Thakur Anukulchandra" },
+  { text: "THE PULL Nothing has a pull more magnetic than love!", author: "Shree Shree Thakur Anukulchandra" }
 ]
 
 function getRandomQuote() {
