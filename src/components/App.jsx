@@ -1129,8 +1129,8 @@ function App({ onChangeSuk, deepLink = {} }) {
                     <button key={dateStr}
                       onClick={() => {
                         setError("");
-                        if (bothTaken) { triggerError("🚫 Both Morning & Evening slots are fully booked for this date. Please choose another date."); return; }
                         setForm({...form, date:dateStr, time:""});
+                        if (bothTaken) { triggerError("🚫 Both Morning & Evening slots are fully booked for this date. Please choose another date.");}
                       }}
                       disabled={false}
                       style={{ display:"flex", flexDirection:"column", alignItems:"center",
