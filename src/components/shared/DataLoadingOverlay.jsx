@@ -9,14 +9,25 @@ const QUOTES = [
   { text: "THE PULL Nothing has a pull more magnetic than love!", author: "Shree Shree Thakur Anukulchandra" },
 ]
 
-// Called at module load time — runs fresh on every page refresh
-const quote = QUOTES[Math.floor(Math.random() * QUOTES.length)]
+// Remembers last shown index across mounts so we never show the same quote twice in a row
+let _lastIndex = -1
+
+function getRandomQuote() {
+  if (QUOTES.length === 1) return QUOTES[0]
+  let idx
+  do {
+    idx = Math.floor(Math.random() * QUOTES.length)
+  } while (idx === _lastIndex)
+  _lastIndex = idx
+  return QUOTES[idx]
+}
 
 /** Full-page overlay with lotus spinner and a random spiritual quote */
 export function DataLoadingOverlay() {
+  // useMemo with [] runs once per mount — picks a fresh quote every time the overlay appears
+  const quote = React.useMemo(() => getRandomQuote(), [])
   const [visible, setVisible] = React.useState(false)
 
-  // Fade the quote in slightly after mount so it feels gentle
   React.useEffect(() => {
     const t = setTimeout(() => setVisible(true), 200)
     return () => clearTimeout(t)
