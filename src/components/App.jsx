@@ -126,15 +126,14 @@ function App({ onChangeSuk, deepLink = {} }) {
 
   const fetchBookings = React.useCallback(async () => {
     if (!isConfigured) { setBookingsReady(true); return; }
-    setLoading(true);
+    setBookingsReady(false);  // show overlay while loading
     try {
       const d = await api.getAll();
       if (d.success && Array.isArray(d.data)) setBookings(d.data);
       else if (Array.isArray(d)) setBookings(d);
-    } catch(e) {}
-    setLoading(false);
+    } catch(e) { console.error('fetchBookings error:', e); }
     setBookingsReady(true);
-  }, []);
+  }, [isConfigured]);
 
   React.useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
@@ -474,15 +473,14 @@ function App({ onChangeSuk, deepLink = {} }) {
   // ── Fetch satsang bookings ─────────────────────────────────
   const fetchSatsangBookings = React.useCallback(async () => {
     if (!isConfigured) { setSatsangReady(true); return; }
-    setSatsangLoadingData(true);
+    setSatsangReady(false);  // show overlay while loading
     try {
       const d = await satsangApi.getAll();
       if (d.success && Array.isArray(d.data)) setSatsangBookings(d.data);
       else if (Array.isArray(d)) setSatsangBookings(d);
-    } catch(e) {}
-    setSatsangLoadingData(false);
+    } catch(e) { console.error('fetchSatsang error:', e); }
     setSatsangReady(true);
-  }, []);
+  }, [isConfigured]);
 
   React.useEffect(() => { fetchSatsangBookings(); }, [fetchSatsangBookings]);
 
