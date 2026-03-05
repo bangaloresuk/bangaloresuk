@@ -70,16 +70,18 @@ function WelcomeScreen({ onSelect }) {
         <SUKSearchDropdown selected={selected} onSelect={setSelected} />
 
         {/* Feature preview — shown after selection */}
-        {activeSuk && activeSuk.configured && (
+        {activeSuk && activeSuk.configured && (() => {
+          const tc = activeSuk.themeColor || '#1d4ed8';
+          return (
           <div style={{ marginTop:16, padding:"14px 16px", borderRadius:14,
-            background:`linear-gradient(135deg,${activeSuk.themeColor}0a,${activeSuk.themeColor}05)`,
-            border:`1px solid ${activeSuk.themeColor}20`,
+            background:`linear-gradient(135deg,${tc}0a,${tc}05)`,
+            border:`1px solid ${tc}20`,
             animation:"fadeSlideIn 0.3s ease-out both" }}>
 
             {/* SUK header */}
             <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
               <div style={{ fontSize:24,
-                filter:`drop-shadow(0 0 8px ${activeSuk.themeColor}60)` }}>
+                filter:`drop-shadow(0 0 8px ${tc}60)` }}>
                 {activeSuk.emoji}
               </div>
               <div>
@@ -91,7 +93,8 @@ function WelcomeScreen({ onSelect }) {
             </div>
 
           </div>
-        )}
+          );
+        })()}
 
         {/* Launch button */}
         <button
@@ -106,9 +109,7 @@ function WelcomeScreen({ onSelect }) {
             transition:"all 0.25s cubic-bezier(0.34,1.56,0.64,1)",
             transform: (canLaunch && !launching) ? "scale(1)" : "scale(0.98)",
             background: canLaunch
-              ? launching
-                ? `linear-gradient(135deg,${activeSuk.themeColor},${activeSuk.themeColor}cc)`
-                : `linear-gradient(135deg,#0f2266,#1d4ed8,#3b82f6)`
+              ? `linear-gradient(135deg,#0f2266,#1d4ed8,#3b82f6)`
               : "rgba(200,210,230,0.5)",
             color: canLaunch ? "#fff" : "#aaa",
             boxShadow: canLaunch ? "0 6px 24px rgba(29,78,216,0.3)" : "none",

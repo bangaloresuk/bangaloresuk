@@ -130,26 +130,22 @@ export const googleSheetsProvider = {
   photos: {
     getAll: () => getCached('getPhotos', SHEET.PHOTOS),
 
-    upload: (file, caption = '', uploader = 'Anonymous') =>
+    upload: (base64, filename, caption = '', uploader = 'Anonymous') =>
       new Promise((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = async (ev) => {
-          try {
-            const result = await gasPost({
-              action:   'uploadPhoto',
-              base64:   ev.target.result.split(',')[1],
-              filename: file.name,
-              caption,
-              uploader,
-            })
+        try {
+          gasPost({
+            action:   'uploadPhoto',
+            base64,
+            filename,
+            caption,
+            uploader,
+          }).then(result => {
             localBust(makeCacheKey('getPhotos', SHEET.PHOTOS))
             resolve(result)
-          } catch (err) {
-            reject(err)
-          }
+          }).catch(err => reject(err))
+        } catch (err) {
+          reject(err)
         }
-        reader.onerror = () => reject(new Error('File read failed'))
-        reader.readAsDataURL(file)
       }),
   },
 }
