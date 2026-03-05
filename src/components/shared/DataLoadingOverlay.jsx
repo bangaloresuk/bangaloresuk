@@ -6,16 +6,14 @@ import React from 'react'
 // ============================================================
 const QUOTES = [
   { text: "Where action pursues desire, fulfilment appears immediately with a smile!", author: "Shree Shree Thakur Anukulchandra" },
-  { text: "THE PULL Nothing has a pull more magnetic than love!", author: "Shree Shree Thakur Anukulchandra" }
+  { text: "THE PULL Nothing has a pull more magnetic than love!", author: "Shree Shree Thakur Anukulchandra" },
 ]
 
-function getRandomQuote() {
-  return QUOTES[Math.floor(Math.random() * QUOTES.length)]
-}
+// Called at module load time — runs fresh on every page refresh
+const quote = QUOTES[Math.floor(Math.random() * QUOTES.length)]
 
 /** Full-page overlay with lotus spinner and a random spiritual quote */
 export function DataLoadingOverlay() {
-  const [quote] = React.useState(() => getRandomQuote())
   const [visible, setVisible] = React.useState(false)
 
   // Fade the quote in slightly after mount so it feels gentle
