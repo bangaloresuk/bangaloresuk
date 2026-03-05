@@ -52,19 +52,11 @@ function makeCacheKey(action, sheetName) {
 //       action/sheetName/id also go in URL so they survive
 //       GAS's internal 302 redirect that drops the body
 
-async function gasGet(params) {
-  const query = new URLSearchParams({ ...params, apiKey: _apiKey, _cb: Date.now() }).toString()
-  const res   = await fetch(`${_scriptUrl}?${query}`)
-  const text  = await res.text()
-  try { return JSON.parse(text) }
-  catch { return { success: false, message: 'Server error. Please try again.' } }
-}
-
+// All requests use POST — consistent path through the Worker,
+// avoids GET body-parse crash in old Worker and GAS redirect issues.
 async function gasPost(params) {
-  const { apiKey: _ignored, ...rest } = params
-  const body = { ...rest, apiKey: _apiKey }
+  const body = { ...params, apiKey: _apiKey }
 
-  // Routing params in URL survive GAS 302 redirect
   const urlParams = new URLSearchParams({
     action:    body.action    || '',
     sheetName: body.sheetName || 'Bookings',
@@ -73,7 +65,7 @@ async function gasPost(params) {
 
   const res  = await fetch(`${_scriptUrl}?${urlParams}`, {
     method:  'POST',
-    headers: { 'Content-Type': 'application/json' },  // ← required for Worker request.json()
+    headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify(body),
   })
   const text = await res.text()
@@ -81,12 +73,8 @@ async function gasPost(params) {
   catch { return { success: false, message: 'Server error. Please try again.' } }
 }
 
-// ── Always fetch fresh — no localStorage cache ───────────
-// Every getAll() goes directly to Google Sheets.
-// The loading overlay handles UX while data loads.
-
 async function getCached(action, sheetName) {
-  return await gasGet({ action, sheetName })
+  return await gasPost({ action, sheetName })
 }
 
 // ── Provider ──────────────────────────────────────────────
