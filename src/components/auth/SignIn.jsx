@@ -3,15 +3,16 @@
 //  ─────────────────────────────────────────────────────────
 //  • App is PUBLIC — this is only for admin access
 //  • OTP is emailed via Cloudflare Worker → GAS → Gmail
-//  • NO secrets in this file — API key lives in the Worker
+//  • NO secrets here — API key lives inside the Worker only
 // ============================================================
 
 import React from 'react'
 import { ADMIN_CONFIG } from '../../config/adminConfig.js'
-import { WORKER_URL } from '../../config/sukConfig.js'
+
+// Public Worker URL — not a secret (it's just a URL like any website)
+const WORKER_URL = 'https://bangaloresuk-proxy.bangaloresuk.workers.dev'
 
 // ── Send OTP via Cloudflare Worker → GAS → Gmail ─────────────
-// The Worker holds the API key + GAS URL — nothing secret here.
 async function sendOtpViaWorker(otp) {
   const res = await fetch(`${WORKER_URL}?action=sendAdminOtp`, {
     method:  'POST',
@@ -33,7 +34,7 @@ async function sendOtpViaWorker(otp) {
 }
 
 function SignIn({ onSignIn }) {
-  const [step, setStep]       = React.useState('form')   // 'form' | 'otp'
+  const [step, setStep]       = React.useState('form')
   const [email, setEmail]     = React.useState('')
   const [otp, setOtp]         = React.useState('')
   const [sentOtp, setSentOtp] = React.useState('')
@@ -105,7 +106,6 @@ function SignIn({ onSignIn }) {
       background: 'radial-gradient(ellipse at 50% -5%, rgba(99,145,255,0.45) 0%, transparent 50%), radial-gradient(ellipse at 0% 100%, rgba(29,78,216,0.2) 0%, transparent 50%), linear-gradient(180deg, #b8ccff 0%, #cfdeff 25%, #dce9ff 55%, #eef4ff 80%, #f5f8ff 100%)',
     }}>
 
-      {/* Glow bg */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         background: 'radial-gradient(ellipse at 50% 40%, rgba(255,220,80,0.06) 0%, transparent 60%)',
@@ -270,7 +270,6 @@ function SignIn({ onSignIn }) {
         )}
       </div>
 
-      {/* Public note */}
       <div style={{
         marginTop: 18, fontSize: 11, color: 'rgba(29,78,216,0.45)',
         textAlign: 'center', lineHeight: 1.8,
