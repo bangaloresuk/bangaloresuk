@@ -864,7 +864,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
         }}>
           {/* Drawer header */}
           <div style={{
-            padding:"28px 20px 18px",
+            padding:"28px 20px 20px",
             background:"linear-gradient(135deg,rgba(29,78,216,0.07),rgba(59,130,246,0.05))",
             borderBottom:"1px solid rgba(59,130,246,0.15)",
             position:"relative",
@@ -876,15 +876,21 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
               fontSize:16, color:"#1e3a8a", display:"flex",
               alignItems:"center", justifyContent:"center", fontWeight:900,
             }}>✕</button>
-            <div style={{ fontSize:26, marginBottom:6 }}>🪷</div>
-            <div style={{ fontFamily:"'Cinzel',serif", color:"#1e3a8a", fontSize:14, fontWeight:800, letterSpacing:1 }}>
-              More Options
+
+            {/* 🪷 All Options 🙏 — one line */}
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, marginBottom:currentUser ? 10 : 0 }}>
+              <span style={{ fontSize:24 }}>🪷</span>
+              <div style={{ fontFamily:"'Cinzel',serif", color:"#1e3a8a", fontSize:15, fontWeight:800,
+                letterSpacing:1.5, textTransform:"uppercase" }}>
+                All Options
+              </div>
+              <span style={{ fontSize:24 }}>🙏</span>
             </div>
             {currentUser && (
               <div style={{
-                marginTop:8, padding:"8px 10px", borderRadius:10,
+                marginTop:10, padding:"8px 10px", borderRadius:10,
                 background:"rgba(29,78,216,0.07)", border:"1px solid rgba(59,130,246,0.15)",
-                fontSize:12, color:"#1e3a8a", fontWeight:600,
+                fontSize:12, color:"#1e3a8a", fontWeight:600, textAlign:"center",
               }}>
                 👤 {currentUser.name} · {currentUser.email || currentUser.mobile}
               </div>
@@ -892,7 +898,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
           </div>
 
           {/* Drawer menu items */}
-          <div style={{ flex:1, padding:"12px 12px" }}>
+          <div style={{ flex:1, padding:"14px 12px" }}>
             {manageTabs.map((t, i) => (
               <button key={t.id}
                 onClick={() => {
@@ -901,31 +907,37 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                   setDrawerOpen(false);
                 }}
                 style={{
-                  display:"flex", alignItems:"center", gap:12, width:"100%",
-                  padding:"13px 14px", border:"none", borderRadius:12, cursor:"pointer",
-                  background:"transparent", textAlign:"left", transition:"all 0.18s",
-                  marginBottom:4,
+                  display:"flex", alignItems:"center", gap:14, width:"100%",
+                  padding:"12px 14px", border:"none", borderRadius:14, cursor:"pointer",
+                  background:"rgba(255,255,255,0.55)", textAlign:"left",
+                  transition:"all 0.18s", marginBottom:8,
+                  boxShadow:"0 1px 4px rgba(29,78,216,0.07)",
+                  borderLeft:"3px solid rgba(59,130,246,0.18)",
                 }}
-                onMouseEnter={e => e.currentTarget.style.background="rgba(29,78,216,0.07)"}
-                onMouseLeave={e => e.currentTarget.style.background="transparent"}
+                onMouseEnter={e => { e.currentTarget.style.background="rgba(29,78,216,0.08)"; e.currentTarget.style.borderLeftColor="#1d4ed8"; }}
+                onMouseLeave={e => { e.currentTarget.style.background="rgba(255,255,255,0.55)"; e.currentTarget.style.borderLeftColor="rgba(59,130,246,0.18)"; }}
               >
+                {/* Icon box */}
                 <div style={{
-                  width:40, height:40, borderRadius:10, flexShrink:0,
+                  width:42, height:42, borderRadius:12, flexShrink:0,
                   background:"linear-gradient(135deg,rgba(29,78,216,0.1),rgba(59,130,246,0.07))",
-                  border:"1px solid rgba(59,130,246,0.18)",
-                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:18,
+                  border:"1px solid rgba(59,130,246,0.2)",
+                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:20,
                 }}>
                   {t.icon}
                 </div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontWeight:700, color:"#1e3a8a", fontSize:13 }}>
-                    {t.label.split(" ").slice(1).join(" ")}
+                {/* Text */}
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:700, color:"#1e3a8a", fontSize:13, lineHeight:1.3,
+                    fontFamily:"'Cinzel',serif", letterSpacing:"0.3px" }}>
+                    {t.label.replace(/^[^\s]+\s/, "")}
                   </div>
-                  <div style={{ fontSize:11, color:"rgba(29,78,216,0.45)", marginTop:2, lineHeight:1.4 }}>
+                  <div style={{ fontSize:11, color:"rgba(29,78,216,0.45)", marginTop:3, lineHeight:1.4 }}>
                     {t.desc}
                   </div>
                 </div>
-                <div style={{ color:"rgba(29,78,216,0.3)", fontSize:16 }}>›</div>
+                {/* Arrow */}
+                <div style={{ color:"rgba(29,78,216,0.35)", fontSize:18, flexShrink:0, fontWeight:300 }}>›</div>
               </button>
             ))}
           </div>
