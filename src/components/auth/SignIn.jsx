@@ -1,32 +1,35 @@
 // ============================================================
-//  SignIn — Admin-only Gmail OTP sign-in via GAS
+//  SignIn — Admin-only Gmail OTP via Cloudflare Worker
 //  ─────────────────────────────────────────────────────────
 //  • App is PUBLIC — this is only for admin access
-//  • OTP is emailed via your existing GAS script
-//  • Configure adminEmail + gasScriptUrl in adminConfig.js
+//  • OTP is emailed via Cloudflare Worker → GAS → Gmail
+//  • NO secrets in this file — API key lives in the Worker
 // ============================================================
 
 import React from 'react'
 import { ADMIN_CONFIG } from '../../config/adminConfig.js'
+import { WORKER_URL } from '../../config/sukConfig.js'
 
-// ── Send OTP via GAS (uses your existing script + API key) ───
-async function sendOtpViaGas(otp) {
-  const url = ADMIN_CONFIG.gasScriptUrl
-  if (!url || url === 'YOUR_GAS_SCRIPT_URL_HERE') {
-    throw new Error('GAS script URL not configured in adminConfig.js')
-  }
-  const res = await fetch(url, {
-    method: 'POST',
+// ── Send OTP via Cloudflare Worker → GAS → Gmail ─────────────
+// The Worker holds the API key + GAS URL — nothing secret here.
+async function sendOtpViaWorker(otp) {
+  const res = await fetch(`${WORKER_URL}?action=sendAdminOtp`, {
+    method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      action:  'sendAdminOtp',
-      apiKey:  ADMIN_CONFIG.gasApiKey || '',
+    body:    JSON.stringify({
+      action: 'sendAdminOtp',
       otp,
-      email:   ADMIN_CONFIG.adminEmail,
+      email:  ADMIN_CONFIG.adminEmail,
     }),
   })
-  const data = await res.json()
-  if (!data.success) throw new Error(data.message || 'Failed to send OTP')
+  const text = await res.text()
+  try {
+    const data = JSON.parse(text)
+    if (!data.success) throw new Error(data.message || 'Failed to send OTP')
+    return data
+  } catch (e) {
+    throw new Error('Worker error: ' + text.slice(0, 120))
+  }
 }
 
 function SignIn({ onSignIn }) {
@@ -58,7 +61,7 @@ function SignIn({ onSignIn }) {
     const code = String(Math.floor(100000 + Math.random() * 900000))
     setSentOtp(code)
     try {
-      await sendOtpViaGas(code)
+      await sendOtpViaWorker(code)
       setSending(false)
       setStep('otp')
     } catch (err) {
@@ -85,7 +88,7 @@ function SignIn({ onSignIn }) {
     const code = String(Math.floor(100000 + Math.random() * 900000))
     setSentOtp(code)
     try {
-      await sendOtpViaGas(code)
+      await sendOtpViaWorker(code)
       setSending(false)
     } catch (err) {
       setSending(false)
@@ -198,7 +201,6 @@ function SignIn({ onSignIn }) {
         {/* ── STEP 2: OTP verification ── */}
         {step === 'otp' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Success banner */}
             <div style={{
               padding: '14px 16px', borderRadius: 12,
               background: 'rgba(209,250,229,0.9)', border: '1px solid rgba(110,231,183,0.6)',

@@ -6,14 +6,15 @@
 //  Step 3: The OTP will be emailed to your Gmail via GAS
 // ============================================================
 
+// ============================================================
+//  adminConfig — Admin Access Configuration
+//  ─────────────────────────────────────────────────────────
+//  NO secrets here — API key and GAS URL live inside the
+//  Cloudflare Worker (never exposed to the browser).
+// ============================================================
+
 export const ADMIN_CONFIG = {
-  // ← Your Gmail address (must match ADMIN_EMAILS in GAS)
+  // Only the admin email is needed here — it's not a secret,
+  // it's just used to gate the sign-in UI on the frontend.
   adminEmail: 'bangaloresuk@gmail.com',
-
-  // ← Your deployed GAS Script URL (same URL used for bookings)
-  // e.g. 'https://script.google.com/macros/s/AKfycb.../exec'
-  gasScriptUrl: 'YOUR_GAS_SCRIPT_URL_HERE',
-
-  // Display name
-  appName: 'BSUK Admin',
 }
