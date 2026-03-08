@@ -19,6 +19,7 @@ async function sendOtpViaWorker(otp) {
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({
       action: 'sendAdminOtp',
+      apiKey: 'bannerghatta',   // SUK identifier for the Worker
       otp,
       email:  ADMIN_CONFIG.adminEmail,
     }),
