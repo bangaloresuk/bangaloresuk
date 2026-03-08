@@ -154,6 +154,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
       "━━━━━━━━━━━━━━━━━━━━",
       `🕐 *Prayer Time:* ${cleanTime(c.prayerTime)} sharp`,
       `📍 *Address:* ${locationLine}`,
+      ...(c.mapsLink ? [`📌 *Google Maps:* ${c.mapsLink}`] : []),
       "━━━━━━━━━━━━━━━━━━━━",
       "",
       "*With love & Jayguru,*",
@@ -607,13 +608,14 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
     const day        = getDayName(date);
     const pt         = getPrayerTimes(date);
     const prayerTime = pt ? pt[time] : "";
+    const mapsLink   = form.mapsLink || "";
 
     setSubmitting(true);
     try {
-      const result = await api.post({ action:"add", name, mobile, place, day, time, date, prayerTime });
+      const result = await api.post({ action:"add", name, mobile, place, mapsLink, day, time, date, prayerTime });
       if (result.success) {
         // Show beautiful confirmation modal
-        setConfirmation({ name, mobile, time, date, prayerTime, id: result.id, place });
+        setConfirmation({ name, mobile, time, date, prayerTime, id: result.id, place, mapsLink });
         setForm({ name:"", mobile:"", place:"", time:"", date:"", mapsLink:"" });
         fetchBookings();
       } else { triggerError(result.message); }
@@ -1797,8 +1799,13 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                   /* ── PRAYER CARD ── */
                   if (!isSatsang) {
                     const sc = SLOT_STYLE[b.time] || SLOT_STYLE["Morning"];
+                    // Extract mapsLink from place if it was stored combined (e.g. "Address https://maps...")
+                    const placeStr = b.place || "";
+                    const urlMatch = placeStr.match(/(https?:\/\/[^\s]+)/);
+                    const extractedMapsLink = urlMatch ? urlMatch[1] : "";
+                    const cleanPlace = extractedMapsLink ? placeStr.replace(extractedMapsLink, "").trim() : placeStr;
                     const shareConf = { name:b.name, mobile:b.mobile, time:b.time,
-                      date:b.date, prayerTime:cleanTime(b.prayerTime), place:b.place, id:b.id };
+                      date:b.date, prayerTime:cleanTime(b.prayerTime), place:cleanPlace || placeStr, mapsLink:extractedMapsLink, id:b.id };
                     return (
                       <div key={b.id} style={{ border:"1.5px solid rgba(59,130,246,0.2)",
                         borderRadius:16, overflow:"hidden",
