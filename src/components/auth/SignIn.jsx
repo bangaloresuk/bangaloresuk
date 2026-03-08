@@ -3,23 +3,24 @@
 //  ─────────────────────────────────────────────────────────
 //  • App is PUBLIC — this is only for admin access
 //  • OTP is emailed via Cloudflare Worker → GAS → Gmail
+//  • Works for ANY SUK — sukKey prop tells Worker which GAS
 //  • NO secrets here — API key lives inside the Worker only
 // ============================================================
 
 import React from 'react'
 import { ADMIN_CONFIG } from '../../config/adminConfig.js'
 
-// Public Worker URL — not a secret (it's just a URL like any website)
 const WORKER_URL = 'https://bangaloresuk-proxy.bangaloresuk.workers.dev'
 
 // ── Send OTP via Cloudflare Worker → GAS → Gmail ─────────────
-async function sendOtpViaWorker(otp) {
+// sukKey tells the Worker which SUK's GAS script to use
+async function sendOtpViaWorker(otp, sukKey) {
   const res = await fetch(`${WORKER_URL}?action=sendAdminOtp`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
     body:    JSON.stringify({
       action: 'sendAdminOtp',
-      apiKey: 'bannerghatta',   // SUK identifier for the Worker
+      apiKey: sukKey,   // which SUK — Worker uses this to pick the right GAS
       otp,
       email:  ADMIN_CONFIG.adminEmail,
     }),
@@ -34,7 +35,7 @@ async function sendOtpViaWorker(otp) {
   }
 }
 
-function SignIn({ onSignIn }) {
+function SignIn({ onSignIn, sukKey }) {
   const [step, setStep]       = React.useState('form')
   const [email, setEmail]     = React.useState('')
   const [otp, setOtp]         = React.useState('')
@@ -63,7 +64,7 @@ function SignIn({ onSignIn }) {
     const code = String(Math.floor(100000 + Math.random() * 900000))
     setSentOtp(code)
     try {
-      await sendOtpViaWorker(code)
+      await sendOtpViaWorker(code, sukKey)
       setSending(false)
       setStep('otp')
     } catch (err) {
@@ -90,7 +91,7 @@ function SignIn({ onSignIn }) {
     const code = String(Math.floor(100000 + Math.random() * 900000))
     setSentOtp(code)
     try {
-      await sendOtpViaWorker(code)
+      await sendOtpViaWorker(code, sukKey)
       setSending(false)
     } catch (err) {
       setSending(false)

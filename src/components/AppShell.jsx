@@ -110,7 +110,7 @@ function AppShell() {
   if (showSignIn) {
     return (
       <>
-        <SignIn onSignIn={handleSignIn} />
+        <SignIn onSignIn={handleSignIn} sukKey={selectedSuk} />
         {/* Cancel button to go back without signing in */}
         <button
           onClick={() => setShowSignIn(false)}
