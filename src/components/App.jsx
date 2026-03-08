@@ -45,7 +45,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
   const isConfigured = !!(state.ACTIVE_SUK && state.ACTIVE_SUK.configured &&
     state.SCRIPT_URL && state.SCRIPT_URL !== "" && !state.SCRIPT_URL.startsWith("YOUR_"));
   const [bookings,   setBookings]   = React.useState([]);
-  const [form,       setForm]       = React.useState({ name:"", mobile:"", place:"", time:"", date:"" });
+  const [form,       setForm]       = React.useState({ name:"", mobile:"", place:"", time:"", date:"", mapsLink:"" });
 
   const [error,      setError]      = React.useState("");
   const [shake,      setShake]      = React.useState(false);
@@ -538,6 +538,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
 
   const handlePhotoUpload = async () => {
     if (!photoUpload.file) { setPhotoMsg("⚠️ Please select a photo first."); return; }
+    if (!photoUpload.uploader.trim()) { setPhotoMsg("⚠️ Please enter your name before uploading."); return; }
     if (!isConfigured)     { setPhotoMsg("⚠️ Script URL not configured."); return; }
     setPhotoUploading(true); setPhotoMsg("");
     try {
@@ -613,7 +614,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
       if (result.success) {
         // Show beautiful confirmation modal
         setConfirmation({ name, mobile, time, date, prayerTime, id: result.id, place });
-        setForm({ name:"", mobile:"", place:"", time:"", date:"" });
+        setForm({ name:"", mobile:"", place:"", time:"", date:"", mapsLink:"" });
         fetchBookings();
       } else { triggerError(result.message); }
     } catch(e) { triggerError("⚠️ Network error. Please try again."); }
@@ -1049,27 +1050,39 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
           <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
             gap:8, marginTop:10, flexWrap:"wrap" }}>
             {bookings.length > 0 && (
-              <div style={{ display:"inline-flex", alignItems:"center", gap:5,
-                padding:"5px 12px", borderRadius:20,
-                background:"rgba(29,78,216,0.07)",
-                border:"1px solid rgba(29,78,216,0.14)" }}>
+              <div
+                onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+                style={{ display:"inline-flex", alignItems:"center", gap:5,
+                  padding:"5px 12px", borderRadius:20,
+                  background:"rgba(29,78,216,0.07)",
+                  border:"1px solid rgba(29,78,216,0.14)",
+                  cursor:"pointer", transition:"background 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.background="rgba(29,78,216,0.15)"}
+                onMouseLeave={e => e.currentTarget.style.background="rgba(29,78,216,0.07)"}>
                 <span style={{ fontSize:12 }}>🌅</span>
                 <span style={{ fontSize:11, color:"rgba(29,78,216,0.6)", fontWeight:700,
                   fontFamily:"'Cinzel',serif", letterSpacing:"0.5px" }}>
                   {bookings.length} Prayer{bookings.length!==1?"s":""}
                 </span>
+                <span style={{ fontSize:9, color:"rgba(29,78,216,0.4)", marginLeft:2 }}>›</span>
               </div>
             )}
             {feat.satsangBooking && satsangBookings.length > 0 && (
-              <div style={{ display:"inline-flex", alignItems:"center", gap:5,
-                padding:"5px 12px", borderRadius:20,
-                background:"rgba(217,119,6,0.07)",
-                border:"1px solid rgba(217,119,6,0.18)" }}>
+              <div
+                onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+                style={{ display:"inline-flex", alignItems:"center", gap:5,
+                  padding:"5px 12px", borderRadius:20,
+                  background:"rgba(217,119,6,0.07)",
+                  border:"1px solid rgba(217,119,6,0.18)",
+                  cursor:"pointer", transition:"background 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.background="rgba(217,119,6,0.18)"}
+                onMouseLeave={e => e.currentTarget.style.background="rgba(217,119,6,0.07)"}>
                 <span style={{ fontSize:12 }}>🪔</span>
                 <span style={{ fontSize:11, color:"rgba(120,53,15,0.65)", fontWeight:700,
                   fontFamily:"'Cinzel',serif", letterSpacing:"0.5px" }}>
                   {satsangBookings.length} Satsang{satsangBookings.length!==1?"s":""}
                 </span>
+                <span style={{ fontSize:9, color:"rgba(120,53,15,0.4)", marginLeft:2 }}>›</span>
               </div>
             )}
           </div>
@@ -1203,25 +1216,28 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
 
               <div>
                 <label className="divine-label">📍 Location</label>
-                <div style={{ position:"relative" }}>
-                  <input className="divine-input"
-                    placeholder="Type location name  OR  paste Google Maps link"
-                    value={form.place}
-                    onChange={e => {
-                      const v = e.target.value;
-                      setError("");
-                      const isLink = v.startsWith("http") || v.includes("maps.google") || v.includes("goo.gl") || v.includes("maps.app");
-                      setForm({...form, place:v, mapsLink: isLink ? v : form.mapsLink});
-                    }}/>
-                  {(form.place.startsWith("http") || form.place.includes("maps.google") || form.place.includes("goo.gl") || form.place.includes("maps.app")) && (
-                    <a href={form.place} target="_blank" rel="noopener noreferrer"
-                      style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)",
-                        background:"#1d4ed8", color:"#fff", borderRadius:6, padding:"3px 8px",
-                        fontSize:11, fontWeight:700, textDecoration:"none", whiteSpace:"nowrap" }}>
-                      Open Map ↗
-                    </a>
-                  )}
-                </div>
+                <input className="divine-input"
+                  placeholder="Type location name  OR  paste Google Maps link"
+                  value={form.place}
+                  onChange={e => {
+                    const v = e.target.value;
+                    setError("");
+                    const isLink = v.startsWith("http") || v.includes("maps.google") || v.includes("goo.gl") || v.includes("maps.app");
+                    setForm({...form, place:v, mapsLink: isLink ? v : form.mapsLink});
+                  }}/>
+              </div>
+
+              <div>
+                <label className="divine-label" style={{ display:"flex", alignItems:"center", gap:6 }}>
+                  <span style={{ fontSize:11, color:"rgba(29,78,216,0.5)" }}>✦</span>
+                  <span style={{ fontSize:10, fontWeight:700, letterSpacing:"1.2px", color:"rgba(29,78,216,0.55)" }}>
+                    🚀 GOOGLE MAPS LINK (OPTIONAL)
+                  </span>
+                </label>
+                <input className="divine-input"
+                  placeholder="Paste Google Maps link"
+                  value={form.mapsLink || ""}
+                  onChange={e => { setError(""); setForm({...form, mapsLink: e.target.value}); }}/>
               </div>
 
               <div>
@@ -1571,7 +1587,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                       if (!/^[0-9]{10}$/.test(form.mobile.trim())) { triggerError("⚠️ Please enter a valid 10-digit mobile number."); return; }
                       if (!form.date)          { triggerError("⚠️ Please select a date.");             return; }
                       alert(`✅ Registration received!\n\n${t.icon} ${t.label}\n👤 ${form.name}\n📅 ${form.date}\n\nOur team will contact you shortly. Jayguru 🙏`);
-                      setForm({ name:"", mobile:"", place:"", time:"", date:"" });
+                      setForm({ name:"", mobile:"", place:"", time:"", date:"", mapsLink:"" });
                     }}
                   >
                     {t.icon}  Register for {t.label}
