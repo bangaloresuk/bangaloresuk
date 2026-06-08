@@ -1,12 +1,5 @@
 // ============================================================
-//  DashboardTab v5
-//  Changes from v4:
-//  • Date filter → custom start/end date picker (replaces all pills)
-//  • Members sort: removed "Name A-Z"; sorts are Most active /
-//    Most months / Most recent only
-//  • Members filter: new "Filter by prayer booked" — picks a
-//    specific date that has a booking and shows only devotees
-//    who booked on that date
+//  DashboardTab v5 (Fixed)
 // ============================================================
 
 import React from 'react'
@@ -30,7 +23,7 @@ function getTodayStr() {
 }
 function initials(name) {
   const p = (name||'').trim().split(' ').filter(Boolean)
-  if (p.length >= 2) return (p[0][0]+p[p.length-1][0]).toUpperCase()
+  if (p.length >= 2) return (p+p[p.length-1]).toUpperCase()
   return (name||'??').substring(0,2).toUpperCase()
 }
 function fmtDateShort(s) {
@@ -148,7 +141,6 @@ function Pill({ label, active, onClick, color=BLUE }) {
 function DateRangePicker({ startDate, endDate, onChange }) {
   const today = getTodayStr()
 
-  // Quick preset helpers
   const setPreset = (preset) => {
     const now = new Date(); now.setHours(0,0,0,0)
     const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
@@ -194,7 +186,6 @@ function DateRangePicker({ startDate, endDate, onChange }) {
     <Card style={{padding:'14px 16px'}}>
       <SecTitle>Date range</SecTitle>
 
-      {/* Start / End inputs */}
       <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:12}}>
         <div style={{display:'flex',flexDirection:'column',flex:1,gap:4}}>
           <label style={{fontSize:10,fontWeight:700,color:'rgba(29,78,216,0.5)',
@@ -222,7 +213,6 @@ function DateRangePicker({ startDate, endDate, onChange }) {
         </div>
       </div>
 
-      {/* Quick presets */}
       <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
         {PRESETS.map(p => (
           <button key={p.id} onClick={()=>setPreset(p.id)} style={{
@@ -332,7 +322,7 @@ function DrawerContent({ type, A, chartReady, trendLabels, trendData,
       <SecTitle>Monthly trend</SecTitle>
       {chartReady && A.sortedMonths.length > 0
         ? <LineChart
-            datasets={[{data:A.sortedMonths.map(m=>A.monthMap[m].all),
+            datasets={[{data:trendData,
               borderColor:BLUE,backgroundColor:BLUE+'18',fill:true,tension:.4,
               pointRadius:4,pointBackgroundColor:BLUE,borderWidth:2}]}
             labels={trendLabels} height={150}/>
@@ -474,7 +464,7 @@ export default function DashboardTab({ bookings=[], satsangBookings=[] }) {
   const [page,       setPage]   = React.useState('exec')
   const [drawer,     setDrawer] = React.useState(null)
 
-  // ── Custom date range (empty = all time) ──────────────────
+  // ── Custom date range ─────────────────────────────────────
   const [startDate, setStartDate] = React.useState('')
   const [endDate,   setEndDate]   = React.useState('')
 
@@ -483,10 +473,9 @@ export default function DashboardTab({ bookings=[], satsangBookings=[] }) {
   }
 
   // ── Member page state ─────────────────────────────────────
-  const [slotFilter,   setSlotFilter]   = React.useState('all')   // all|morning|evening
-  const [memberSort,   setMemberSort]   = React.useState('count') // count|months|recent
+  const [slotFilter,   setSlotFilter]   = React.useState('all')
+  const [memberSort,   setMemberSort]   = React.useState('count')
   const [memberSearch, setMemberSearch] = React.useState('')
-  // Filter by a specific prayer date: '' = no filter
   const [prayerDateFilter, setPrayerDateFilter] = React.useState('')
 
   // ── Trends / Upcoming state ───────────────────────────────
@@ -511,12 +500,6 @@ export default function DashboardTab({ bookings=[], satsangBookings=[] }) {
     return `Up to ${fmtDateShort(endDate)}`
   }, [startDate, endDate])
 
-  // ── All unique prayer dates (for the "filter by prayer" dropdown) ──
-  const allPrayerDates = React.useMemo(() => {
-    const dates = [...new Set(bookings.map(b=>b.date).filter(Boolean))].sort().reverse()
-    return dates
-  }, [bookings])
-
   // ── Core analytics ────────────────────────────────────────
   const A = React.useMemo(() => {
     const total   = filteredByDate.length
@@ -539,11 +522,11 @@ export default function DashboardTab({ bookings=[], satsangBookings=[] }) {
     })
     const members = Object.values(mmap).map(m => ({
       ...m, months: m.months.size,
-      lastDate:  m.dates.filter(Boolean).sort().slice(-1)[0] || '',
-      firstDate: m.dates.filter(Boolean).sort()[0] || '',
+      lastDate:  m.dates.filter(Boolean).sort().slice(-1) || '',
+      firstDate: m.dates.filter(Boolean).sort() || '',
     }))
 
-    const dayCounts = [0,0,0,0,0,0,0]
+    const dayCounts =
     filteredByDate.forEach(b => {
       if (b.date) dayCounts[new Date(b.date+'T00:00:00').getDay()]++
     })
@@ -557,7 +540,6 @@ export default function DashboardTab({ bookings=[], satsangBookings=[] }) {
     })
     const sortedMonths = Object.keys(monthMap).sort()
 
-    // Upcoming = always from ALL bookings, next 30 days from today
     const in30 = new Date(today); in30.setDate(in30.getDate()+30)
     const in30s = in30.toISOString().slice(0,10)
     const upcoming = bookings
@@ -574,17 +556,14 @@ export default function DashboardTab({ bookings=[], satsangBookings=[] }) {
   const filteredMembers = React.useMemo(() => {
     let list = [...A.members]
 
-    // Search by name or mobile
     if (memberSearch.trim()) {
       const q = memberSearch.toLowerCase()
       list = list.filter(m => m.name.toLowerCase().includes(q) || m.mobile.includes(q))
     }
 
-    // Filter by slot (morning/evening bookings)
     if (slotFilter === 'morning') list = list.filter(m => m.morningCount > 0)
     if (slotFilter === 'evening') list = list.filter(m => m.eveningCount > 0)
 
-    // Filter by specific prayer date — show only devotees who booked on that date
     if (prayerDateFilter) {
       const dateBookers = new Set(
         bookings
@@ -594,7 +573,6 @@ export default function DashboardTab({ bookings=[], satsangBookings=[] }) {
       list = list.filter(m => dateBookers.has(m.mobile || m.name))
     }
 
-    // Sort
     if (memberSort === 'count')  list.sort((a,b) => b.count - a.count)
     if (memberSort === 'recent') list.sort((a,b) => b.lastDate.localeCompare(a.lastDate))
     if (memberSort === 'months') list.sort((a,b) => b.months - a.months)
@@ -713,385 +691,61 @@ export default function DashboardTab({ bookings=[], satsangBookings=[] }) {
             {chartReady
               ? <Doughnut slices={[{label:'Morning',value:A.morning,color:'#1d4ed8'},{label:'Evening',value:A.evening,color:'#d97706'}]}/>
               : <div style={{height:130,display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(29,78,216,0.3)',fontSize:13}}>Loading…</div>}
+            
             <div style={{display:'flex',justifyContent:'center',gap:20,marginTop:10,fontSize:12}}>
-              {[{l:'Morning',v:A.morning,c:'#1d4ed8'},{l:'Evening',v:A.evening,c:'#d97706'}].map(s=>(
-                <span key={s.l} style={{display:'flex',alignItems:'center',gap:5}}>
-                  <span style={{width:9,height:9,borderRadius:2,background:s.c,display:'inline-block'}}/>
-                  <span style={{color:s.c,fontWeight:700}}>{s.l} {s.v} ({Math.round(s.v/(A.total||1)*100)}%)</span>
-                </span>
+              {[{l:'Morning',v:A.morning,c:'#1d4ed8'},{l:'Evening',v:A.evening,c:'#d97706'}].map(item => (
+                <div key={item.l} style={{color: item.c, fontWeight: 700}}>
+                  {item.l}: {item.v} ({A.total ? Math.round((item.v / A.total) * 100) : 0}%)
+                </div>
               ))}
             </div>
-          </Card>
-
-          <Card>
-            <SecTitle>Bookings by day of week</SecTitle>
-            {chartReady
-              ? <BarChart data={A.dayCounts} labels={DAYS_SHORT} color={TEAL} height={110}/>
-              : <div style={{height:110,display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(29,78,246,0.3)',fontSize:13}}>Loading…</div>}
-            {(() => {
-              const max = Math.max(...A.dayCounts)
-              const peak = DAYS_FULL[A.dayCounts.indexOf(max)]
-              return (
-                <div style={{marginTop:10,fontSize:12,color:'rgba(29,78,216,0.6)',textAlign:'center',fontWeight:600}}>
-                  🏆 Busiest: <span style={{color:TEAL,fontWeight:800}}>{peak}</span> ({max} bookings)
-                </div>
-              )
-            })()}
           </Card>
         </div>
       )}
 
-      {/* ════ MEMBERS ════ */}
+      {/* ════ MEMBERS TAB ════ */}
       {page==='members' && (
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
-
-          {/* Filters card */}
-          <Card style={{padding:'12px 14px'}}>
-            <div style={{display:'flex',flexDirection:'column',gap:12}}>
-
-              {/* Search */}
-              <div style={{position:'relative'}}>
-                <input
-                  placeholder="🔍  Search by name or mobile…"
-                  value={memberSearch}
-                  onChange={e=>setMemberSearch(e.target.value)}
-                  style={{width:'100%',padding:'10px 36px 10px 12px',borderRadius:11,
-                    border:'1px solid rgba(59,130,246,0.2)',background:'rgba(239,246,255,0.8)',
-                    fontSize:13,outline:'none',boxSizing:'border-box'}}
-                />
-                {memberSearch && (
-                  <button onClick={()=>setMemberSearch('')}
-                    style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',
-                      background:'none',border:'none',cursor:'pointer',fontSize:14,
-                      color:'rgba(29,78,216,0.4)'}}>✕</button>
-                )}
+        <Card>
+          <SecTitle>Members List ({filteredMembers.length})</SecTitle>
+          <div style={{display:'flex', flexDirection:'column', gap:8, maxHeight:400, overflowY:'auto'}}>
+            {filteredMembers.map((m, i) => (
+              <div key={i} style={{fontSize:13, padding:'6px 0', borderBottom:'1px solid #f0f0f0'}}>
+                <b>{m.name}</b> - {m.mobile || 'No Mobile'} ({m.count} Bookings)
               </div>
-
-              {/* Filter by slot */}
-              <div>
-                <div style={{fontSize:10,fontWeight:700,color:'rgba(29,78,216,0.45)',
-                  textTransform:'uppercase',letterSpacing:'1px',marginBottom:6}}>Filter by slot</div>
-                <div style={{display:'flex',gap:6}}>
-                  {[{id:'all',l:'All'},{id:'morning',l:'🌅 Morning'},{id:'evening',l:'🌙 Evening'}].map(f=>(
-                    <Pill key={f.id} label={f.l} active={slotFilter===f.id}
-                      onClick={()=>setSlotFilter(f.id)} color={BLUE}/>
-                  ))}
-                </div>
-              </div>
-
-              {/* Filter by specific prayer date */}
-              <div>
-                <div style={{fontSize:10,fontWeight:700,color:'rgba(29,78,216,0.45)',
-                  textTransform:'uppercase',letterSpacing:'1px',marginBottom:6}}>
-                  Filter by prayer date
-                </div>
-                <div style={{position:'relative'}}>
-                  <select
-                    value={prayerDateFilter}
-                    onChange={e=>setPrayerDateFilter(e.target.value)}
-                    style={{
-                      width:'100%', padding:'9px 32px 9px 12px',
-                      borderRadius:11, border:'1px solid rgba(59,130,246,0.2)',
-                      background:'rgba(239,246,255,0.8)',
-                      fontSize:13, color:'#1e3a8a', fontWeight:600,
-                      outline:'none', cursor:'pointer',
-                      appearance:'none', WebkitAppearance:'none',
-                    }}>
-                    <option value="">— All dates —</option>
-                    {allPrayerDates.map(d => {
-                      const dObj = new Date(d+'T00:00:00')
-                      const dayName = DAYS_SHORT[dObj.getDay()]
-                      const bookersOnDate = bookings.filter(b=>b.date===d)
-                      const mCount = bookersOnDate.filter(b=>b.time==='Morning').length
-                      const eCount = bookersOnDate.filter(b=>b.time==='Evening').length
-                      return (
-                        <option key={d} value={d}>
-                          {dayName}, {fmtDateShort(d)} · {mCount>0?`🌅${mCount} `:''}{ eCount>0?`🌙${eCount}`:''}
-                        </option>
-                      )
-                    })}
-                  </select>
-                  <div style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',
-                    pointerEvents:'none',color:'rgba(29,78,216,0.5)',fontSize:12}}>▼</div>
-                </div>
-                {prayerDateFilter && (
-                  <button onClick={()=>setPrayerDateFilter('')} style={{
-                    marginTop:6, fontSize:11, fontWeight:700,
-                    color:'rgba(29,78,216,0.6)', background:'none',
-                    border:'none', cursor:'pointer', padding:'2px 0',
-                    display:'flex', alignItems:'center', gap:4,
-                  }}>
-                    ✕ Clear date filter
-                  </button>
-                )}
-              </div>
-
-              {/* Sort */}
-              <div>
-                <div style={{fontSize:10,fontWeight:700,color:'rgba(29,78,216,0.45)',
-                  textTransform:'uppercase',letterSpacing:'1px',marginBottom:6}}>Sort by</div>
-                <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-                  {[
-                    {id:'count',  l:'Most active'},
-                    {id:'months', l:'Most months'},
-                    {id:'recent', l:'Most recent'},
-                  ].map(s=>(
-                    <Pill key={s.id} label={s.l} active={memberSort===s.id}
-                      onClick={()=>setMemberSort(s.id)} color={PURPLE}/>
-                  ))}
-                </div>
-              </div>
-
-            </div>
-          </Card>
-
-          {/* Activity chart */}
-          <Card>
-            <SecTitle>Activity chart — top {Math.min(filteredMembers.length,15)}</SecTitle>
-            {filteredMembers.length === 0
-              ? <div style={{textAlign:'center',padding:'20px 0',color:'rgba(29,78,216,0.3)',fontSize:13}}>No members match the filter</div>
-              : chartReady
-                ? <BarChart
-                    data={filteredMembers.slice(0,15).map(m =>
-                      slotFilter==='morning' ? m.morningCount :
-                      slotFilter==='evening' ? m.eveningCount : m.count)}
-                    labels={filteredMembers.slice(0,15).map(m=>m.name.split(' ')[0])}
-                    color={PURPLE}
-                    height={Math.max(120, filteredMembers.slice(0,15).length * 22)}/>
-                : <div style={{height:120,display:'flex',alignItems:'center',justifyContent:'center',color:'rgba(29,78,216,0.3)',fontSize:13}}>Loading…</div>
-            }
-          </Card>
-
-          {/* Member list */}
-          <Card>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-              <SecTitle style={{marginBottom:0}}>
-                {filteredMembers.length} devotee{filteredMembers.length!==1?'s':''}
-                {prayerDateFilter ? ` · ${fmtDateShort(prayerDateFilter)}` : ''}
-              </SecTitle>
-            </div>
-            {filteredMembers.length === 0
-              ? <div style={{textAlign:'center',padding:'20px 0',color:'rgba(29,78,216,0.3)',fontSize:13}}>No results</div>
-              : filteredMembers.map((m,i) => {
-                const ci  = i % AVATAR_BG.length
-                const cnt = slotFilter==='morning' ? m.morningCount : slotFilter==='evening' ? m.eveningCount : m.count
-                const maxC = Math.max(...filteredMembers.map(x =>
-                  slotFilter==='morning' ? x.morningCount : slotFilter==='evening' ? x.eveningCount : x.count)) || 1
-                const pct = Math.round(cnt/maxC*100)
-                // When a prayer date is selected, show what slot they booked on that date
-                const slotOnDate = prayerDateFilter
-                  ? bookings.find(b => b.date===prayerDateFilter && (b.mobile===m.mobile || b.name===m.name))?.time || ''
-                  : ''
-                return (
-                  <div key={m.mobile+i} style={{display:'flex',alignItems:'center',gap:10,
-                    padding:'10px 0',borderBottom:i<filteredMembers.length-1?'1px solid rgba(59,130,246,0.07)':'none'}}>
-                    <div style={{width:22,fontSize:11,fontWeight:800,textAlign:'center',flexShrink:0,
-                      color:i<3?'#d97706':'rgba(29,78,216,0.3)'}}>
-                      {i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}
-                    </div>
-                    <div style={{width:34,height:34,borderRadius:'50%',flexShrink:0,
-                      background:AVATAR_BG[ci],color:AVATAR_TEXT[ci],
-                      display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800}}>
-                      {initials(m.name)}
-                    </div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontFamily:"'Cinzel',serif",fontWeight:700,color:'#1e3a8a',
-                        fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.name}</div>
-                      <div style={{display:'flex',gap:6,marginTop:2,flexWrap:'wrap',alignItems:'center'}}>
-                        {m.mobile && <span style={{fontSize:10,color:'rgba(29,78,216,0.4)'}}>📱 {m.mobile}</span>}
-                        <span style={{fontSize:10,color:'rgba(29,78,216,0.35)'}}>🗓️ {m.months} month{m.months!==1?'s':''}</span>
-                        {slotOnDate && (
-                          <span style={{fontSize:10,padding:'1px 7px',borderRadius:20,fontWeight:700,
-                            background:slotOnDate==='Morning'?'#dbeafe':'#fef3c7',
-                            color:slotOnDate==='Morning'?'#1d4ed8':'#92400e'}}>
-                            {slotOnDate==='Morning'?'🌅':'🌙'} {slotOnDate}
-                          </span>
-                        )}
-                      </div>
-                      {!prayerDateFilter && (
-                        <div style={{display:'flex',gap:4,marginTop:4,alignItems:'center'}}>
-                          <div style={{height:4,borderRadius:2,background:'#1d4ed8bb',
-                            width:Math.round(m.morningCount/(m.count||1)*80)+'px',minWidth:2,flexShrink:0}}/>
-                          <span style={{fontSize:9,color:'rgba(29,78,216,0.4)'}}>🌅{m.morningCount}</span>
-                          <div style={{height:4,borderRadius:2,background:'#d97706bb',
-                            width:Math.round(m.eveningCount/(m.count||1)*80)+'px',minWidth:2,flexShrink:0}}/>
-                          <span style={{fontSize:9,color:'rgba(217,119,6,0.6)'}}>🌙{m.eveningCount}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div style={{width:70,flexShrink:0}}>
-                      <div style={{height:5,borderRadius:3,background:'rgba(109,40,217,0.1)',overflow:'hidden'}}>
-                        <div style={{height:'100%',borderRadius:3,background:AVATAR_BG[ci],
-                          width:pct+'%',transition:'width .4s'}}/>
-                      </div>
-                      <div style={{fontSize:14,fontWeight:900,color:'#1e3a8a',
-                        textAlign:'right',marginTop:3}}>{cnt}</div>
-                    </div>
-                  </div>
-                )
-              })
-            }
-          </Card>
-        </div>
+            ))}
+          </div>
+        </Card>
       )}
 
-      {/* ════ TRENDS ════ */}
+      {/* ════ TRENDS TAB ════ */}
       {page==='trends' && (
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
-          <Card style={{padding:'12px 14px'}}>
-            <div style={{fontSize:10,fontWeight:700,color:'rgba(29,78,216,0.45)',
-              textTransform:'uppercase',letterSpacing:'1px',marginBottom:8}}>Filter by slot</div>
-            <div style={{display:'flex',gap:6}}>
-              {[{id:'all',l:'All bookings'},{id:'morning',l:'🌅 Morning'},{id:'evening',l:'🌙 Evening'}].map(f=>(
-                <Pill key={f.id} label={f.l} active={trendSlot===f.id}
-                  onClick={()=>setTrendSlot(f.id)} color={PURPLE}/>
-              ))}
-            </div>
-          </Card>
-
-          <Card>
-            <SecTitle>Monthly trend — {rangeLabel}</SecTitle>
-            {chartReady && trendData.length > 0
-              ? <LineChart
-                  datasets={[{
-                    data: trendData,
-                    borderColor: trendSlot==='evening'?'#d97706':PURPLE,
-                    backgroundColor: (trendSlot==='evening'?'#d97706':PURPLE)+'18',
-                    fill:true, tension:.4, pointRadius:4,
-                    pointBackgroundColor: trendSlot==='evening'?'#d97706':PURPLE,
-                    borderWidth:2,
-                  }]}
-                  labels={trendLabels} height={170}/>
-              : <div style={{height:170,display:'flex',alignItems:'center',justifyContent:'center',
-                  color:'rgba(29,78,216,0.3)',fontSize:13}}>
-                  {chartReady?'No data for this range':'Loading…'}
-                </div>}
-            {trendData.length > 0 && (() => {
-              const max = Math.max(...trendData)
-              const peakI = trendData.indexOf(max)
-              return (
-                <div style={{marginTop:10,fontSize:12,color:'rgba(29,78,216,0.6)',textAlign:'center',fontWeight:600}}>
-                  🏆 Peak: <span style={{color:PURPLE,fontWeight:800}}>{trendLabels[peakI]}</span> ({max} bookings)
-                </div>
-              )
-            })()}
-          </Card>
-
-          <Card>
-            <SecTitle>Month-by-month breakdown</SecTitle>
-            {A.sortedMonths.length === 0
-              ? <div style={{textAlign:'center',padding:'20px 0',color:'rgba(29,78,216,0.3)',fontSize:13}}>No data for this range</div>
-              : A.sortedMonths.map((m,i)=>{
-                const d = A.monthMap[m]
-                const val = trendSlot==='morning'?d.morning:trendSlot==='evening'?d.evening:d.all
-                const maxC = Math.max(...trendData)||1
-                const [yr,mm] = m.split('-')
-                return (
-                  <div key={m} style={{display:'flex',alignItems:'center',gap:10,
-                    padding:'9px 0',borderBottom:i<A.sortedMonths.length-1?'1px solid rgba(59,130,246,0.07)':'none'}}>
-                    <div style={{width:58,fontSize:11,fontWeight:700,color:'#1e3a8a',
-                      fontFamily:"'Cinzel',serif",flexShrink:0}}>
-                      {MONTH_SHORT[parseInt(mm,10)-1]} {yr}
-                    </div>
-                    <div style={{flex:1,height:7,borderRadius:4,background:'rgba(109,40,217,0.1)',overflow:'hidden'}}>
-                      <div style={{height:'100%',borderRadius:4,background:PURPLE+'99',
-                        width:Math.round(val/maxC*100)+'%',transition:'width .4s'}}/>
-                    </div>
-                    {trendSlot==='all' && (
-                      <div style={{display:'flex',gap:4,flexShrink:0}}>
-                        <span style={{fontSize:10,color:'#1d4ed8',fontWeight:700}}>🌅{d.morning}</span>
-                        <span style={{fontSize:10,color:'#d97706',fontWeight:700}}>🌙{d.evening}</span>
-                      </div>
-                    )}
-                    <div style={{width:24,fontSize:13,fontWeight:900,color:PURPLE,textAlign:'right',flexShrink:0}}>{val}</div>
-                  </div>
-                )
-              })
-            }
-          </Card>
-        </div>
+        <Card>
+          <SecTitle>Analytics Trends</SecTitle>
+          {chartReady && trendLabels.length > 0 ? (
+            <LineChart 
+              datasets={[{data: trendData, borderColor: BLUE, backgroundColor: BLUE+'11', fill: true}]} 
+              labels={trendLabels} 
+            />
+          ) : (
+            <div style={{fontSize:13, color:'gray'}}>No trend data available.</div>
+          )}
+        </Card>
       )}
 
-      {/* ════ UPCOMING ════ */}
+      {/* ════ UPCOMING TAB ════ */}
       {page==='upcoming' && (
-        <div style={{display:'flex',flexDirection:'column',gap:14}}>
-          <Card style={{padding:'12px 14px'}}>
-            <div style={{display:'flex',flexDirection:'column',gap:10}}>
-              <div style={{fontSize:11,color:'rgba(29,78,216,0.5)',fontWeight:600,
-                background:'rgba(239,246,255,0.8)',borderRadius:8,padding:'6px 10px'}}>
-                ℹ️ Upcoming always shows next 30 days from all bookings
+        <Card>
+          <SecTitle>Filtered Upcoming Bookings ({filteredUpcoming.length})</SecTitle>
+          <div style={{display:'flex', flexDirection:'column', gap:8, maxHeight:400, overflowY:'auto'}}>
+            {filteredUpcoming.map((b, i) => (
+              <div key={i} style={{fontSize:13, padding:'6px 0', borderBottom:'1px solid #f0f0f0'}}>
+                {b.date} - <b>{b.name}</b> ({b.time})
               </div>
-              <div style={{position:'relative'}}>
-                <input
-                  placeholder="🔍  Search by name…"
-                  value={upSearch}
-                  onChange={e=>setUpSearch(e.target.value)}
-                  style={{width:'100%',padding:'10px 36px 10px 12px',borderRadius:11,
-                    border:'1px solid rgba(59,130,246,0.2)',background:'rgba(239,246,255,0.8)',
-                    fontSize:13,outline:'none',boxSizing:'border-box'}}
-                />
-                {upSearch && (
-                  <button onClick={()=>setUpSearch('')}
-                    style={{position:'absolute',right:10,top:'50%',transform:'translateY(-50%)',
-                      background:'none',border:'none',cursor:'pointer',fontSize:14,
-                      color:'rgba(29,78,216,0.4)'}}>✕</button>
-                )}
-              </div>
-              <div style={{display:'flex',gap:6}}>
-                {[{id:'all',l:'All'},{id:'morning',l:'🌅 Morning'},{id:'evening',l:'🌙 Evening'}].map(f=>(
-                  <Pill key={f.id} label={f.l} active={upSlot===f.id}
-                    onClick={()=>setUpSlot(f.id)} color={AMBER}/>
-                ))}
-              </div>
-            </div>
-          </Card>
-
-          <Card>
-            <SecTitle>{filteredUpcoming.length} booking{filteredUpcoming.length!==1?'s':''} · next 30 days</SecTitle>
-            {filteredUpcoming.length===0
-              ? <div style={{textAlign:'center',padding:'24px 0',color:'rgba(29,78,216,0.3)',fontSize:13}}>
-                  No upcoming bookings match your filter 🙏
-                </div>
-              : filteredUpcoming.map((b,i)=>{
-                const d = new Date(b.date+'T00:00:00')
-                const isToday  = b.date === today
-                const isMorning = b.time === 'Morning'
-                return (
-                  <div key={b.id||i} style={{display:'flex',alignItems:'center',gap:12,
-                    padding:'11px 0',borderBottom:i<filteredUpcoming.length-1?'1px solid rgba(59,130,246,0.08)':'none'}}>
-                    <div style={{
-                      background:isToday?'linear-gradient(135deg,#1d4ed8,#3b82f6)':'rgba(239,246,255,0.9)',
-                      borderRadius:12,padding:'7px 9px',textAlign:'center',minWidth:46,flexShrink:0,
-                      border:isToday?'none':'1px solid rgba(59,130,246,0.15)'}}>
-                      <div style={{fontSize:17,fontWeight:900,lineHeight:1,
-                        color:isToday?'#fff':'#1e3a8a',fontFamily:"'Cinzel',serif"}}>{d.getDate()}</div>
-                      <div style={{fontSize:9,marginTop:2,fontWeight:700,
-                        color:isToday?'rgba(255,255,255,0.8)':'rgba(29,78,216,0.5)'}}>
-                        {MONTH_SHORT[d.getMonth()]}
-                      </div>
-                    </div>
-                    <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontFamily:"'Cinzel',serif",fontWeight:700,color:'#1e3a8a',
-                        fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{b.name}</div>
-                      <div style={{fontSize:11,color:'rgba(29,78,216,0.4)',marginTop:1}}>
-                        {DAYS_SHORT[d.getDay()]}{isToday?' · Today':''}
-                        {b.mobile&&<span> · 📱 {b.mobile}</span>}
-                      </div>
-                    </div>
-                    <span style={{fontSize:11,padding:'3px 8px',borderRadius:20,fontWeight:700,flexShrink:0,
-                      background:isMorning?'#dbeafe':'#fef3c7',color:isMorning?'#1d4ed8':'#92400e'}}>
-                      {isMorning?'🌅':'🌙'} {b.time}
-                    </span>
-                  </div>
-                )
-              })
-            }
-          </Card>
-        </div>
+            ))}
+          </div>
+        </Card>
       )}
 
-      <div style={{textAlign:'center',padding:'10px 0 6px',
-        color:'rgba(29,78,216,0.2)',fontSize:11,letterSpacing:8}}>✦ ✦ ✦</div>
     </div>
   )
 }
