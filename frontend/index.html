@@ -4,271 +4,76 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Jayguru — Bangalore SUK</title>
-
-  <!-- ── PERFORMANCE: Preconnect before font CSS fires ── -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-  <!-- ── PERFORMANCE: Non-blocking font load, trimmed to 2 weights each ── -->
-  <link rel="preload" as="style"
-        href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@400;700&display=swap">
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@400;700&display=swap"
-        rel="stylesheet" media="print" onload="this.media='all'">
-  <noscript>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
-  </noscript>
-
-  <style>
-    /* ── Reset & base ── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html, body {
-      height: 100%;
-      /* Deep navy — matches Image 2 exactly */
-      background: #0d1b6e;
-    }
-
-    /* ── Global page background: deep royal blue radial ── */
-    body {
-      background: radial-gradient(ellipse 120% 100% at 50% 0%,
-        #1a2fa8 0%,
-        #0d1b6e 45%,
-        #080f40 100%);
-      min-height: 100vh;
-    }
-
-    /* ── #root must be transparent so body bg shows through ── */
-    #root {
-      position: relative;
-      z-index: 1;
-    }
-
-    /* ══════════════════════════════════════════════════════
-       SPLASH SCREEN — matches Image 2 (deep navy, centred)
-       ══════════════════════════════════════════════════════ */
-    #splash {
-      position: fixed; inset: 0; z-index: 9999;
-      /* Same deep navy as the main app so there's no jarring colour shift */
-      background: radial-gradient(ellipse 130% 110% at 50% 0%,
-        #1a2fa8 0%,
-        #0d1b6e 40%,
-        #070e3d 100%);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    /* Subtle light-ray effect — pure CSS, zero extra DOM ── */
-    #splash::before {
-      content: '';
-      position: absolute; inset: 0;
-      background:
-        conic-gradient(from 88deg at 50% 0%,
-          transparent 0deg,
-          rgba(255,220,100,0.06) 2deg,
-          transparent 4deg,
-          transparent 8deg,
-          rgba(255,220,100,0.04) 9deg,
-          transparent 11deg);
-      pointer-events: none;
-      animation: beamPulse 4s ease-in-out infinite alternate;
-      will-change: opacity;
-    }
-
-    /* Expanding ripple rings centred on the lotus ── */
-    .s-ring {
-      position: absolute;
-      top: 50%; left: 50%;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 210, 80, 0.15);
-      transform: translate(-50%, -50%) scale(0.3);
-      animation: ringOut 4s ease-out infinite;
-      will-change: transform, opacity;
-    }
-    .s-ring:nth-child(1) { width: 220px; height: 220px; animation-delay: 0s; }
-    .s-ring:nth-child(2) { width: 220px; height: 220px; animation-delay: 1.4s; }
-    .s-ring:nth-child(3) { width: 220px; height: 220px; animation-delay: 2.8s; }
-
-    /* Falling petal canvas ── */
-    #petalCanvas {
-      position: absolute; inset: 0;
-      pointer-events: none;
-    }
-
-    /* ── Content stack (centred column) ── */
-    .s-content {
-      position: relative; z-index: 2;
-      display: flex; flex-direction: column;
-      align-items: center;
-      gap: 0;
-    }
-
-    .s-lotus {
-      font-size: clamp(3rem, 7vw, 4.5rem);
-      line-height: 1;
-      margin-bottom: 0.5em;
-      animation: lotusFloat 3s ease-in-out infinite;
-      will-change: transform;
-      /* Slight glow beneath the lotus emoji */
-      filter: drop-shadow(0 0 28px rgba(255, 210, 100, 0.55));
-    }
-
-    .s-jayguru {
-      font-family: Cinzel, 'Palatino Linotype', Georgia, serif;
-      font-size: clamp(2.6rem, 7vw, 5rem);
-      font-weight: 700;
-      /* Gold gradient matching Image 2 */
-      background: linear-gradient(180deg, #f5c842 0%, #e8a800 60%, #c87f00 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: 0.18em;
-      line-height: 1;
-      margin-bottom: 0.3em;
-      /* Text glow without needing text-shadow (which breaks gradient text) */
-      filter: drop-shadow(0 0 18px rgba(240, 185, 30, 0.45));
-    }
-
-    .s-ornament {
-      display: flex; align-items: center; gap: 0.55em;
-      margin: 0.45em 0 0.6em;
-      color: rgba(245, 200, 66, 0.55);
-      font-size: 0.78rem;
-      letter-spacing: 0.05em;
-    }
-    .s-ornament-line {
-      width: clamp(45px, 6vw, 70px);
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(245,200,66,0.4), transparent);
-    }
-
-    .s-suk {
-      font-family: Lato, Arial, sans-serif;
-      font-size: clamp(0.7rem, 1.8vw, 0.9rem);
-      color: rgba(210, 220, 255, 0.7);
-      letter-spacing: 0.32em;
-      text-transform: uppercase;
-      margin-top: 0.1em;
-    }
-
-    /* Progress bar ── */
-    .s-bar-wrap {
-      width: clamp(120px, 22vw, 200px);
-      height: 2px;
-      background: rgba(255, 210, 80, 0.12);
-      border-radius: 2px;
-      overflow: hidden;
-      margin-top: 2.2em;
-    }
-    .s-bar {
-      height: 100%;
-      width: 0;
-      background: linear-gradient(90deg, #c87f00, #f5c842, #fff8d0, #f5c842, #c87f00);
-      border-radius: 2px;
-      animation: loadBar 2.4s cubic-bezier(.4,0,.2,1) forwards;
-      will-change: width;
-    }
-
-    /* ── Bottom gold accent line — visible in Image 2 ── */
-    #splash::after {
-      content: '';
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      height: 3px;
-      background: linear-gradient(90deg, transparent, #f5c842 30%, #fff8a0 50%, #f5c842 70%, transparent);
-    }
-
-    /* ══════════════════════════════════════════════════════
-       BACKGROUND MANDALAS (behind React app, always visible)
-       ══════════════════════════════════════════════════════ */
-    .mandala, .mandala2 {
-      position: fixed;
-      top: 50%; left: 50%;
-      translate: -50% -50%;
-      pointer-events: none;
-      z-index: 0;
-      will-change: transform;
-    }
-    /* Matches Image 2: faint white/silver lines, not blue */
-    .mandala {
-      width: min(92vw, 92vh);
-      opacity: 0.08;
-      animation: spinCW 32s linear infinite;
-    }
-    .mandala2 {
-      width: min(66vw, 66vh);
-      opacity: 0.07;
-      animation: spinCCW 22s linear infinite;
-    }
-
-    /* ── Keyframes ── */
-    @keyframes lotusFloat {
-      0%, 100% { transform: translateY(0);    }
-      50%       { transform: translateY(-8px); }
-    }
-    @keyframes ringOut {
-      0%   { transform: translate(-50%,-50%) scale(0.3); opacity: 0.8; }
-      100% { transform: translate(-50%,-50%) scale(2.6); opacity: 0;   }
-    }
-    @keyframes beamPulse {
-      from { opacity: 0.5; }
-      to   { opacity: 1;   }
-    }
-    @keyframes loadBar {
-      from { width: 0;    }
-      to   { width: 100%; }
-    }
-    @keyframes spinCW  { to { transform: translate(-50%,-50%) rotate(360deg);  } }
-    @keyframes spinCCW { to { transform: translate(-50%,-50%) rotate(-360deg); } }
-
-    @keyframes splashFadeOut {
-      from { opacity: 1; }
-      to   { opacity: 0; }
-    }
-
-    /* ── Honour reduced-motion ── */
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation-duration: 0.01ms !important; }
-    }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Lato:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-  <!-- ══════════════════════════════════════
-       SPLASH SCREEN
-       ══════════════════════════════════════ -->
+  <!-- ── SPLASH SCREEN ── -->
   <div id="splash">
-    <!-- Ripple rings -->
-    <div class="s-ring"></div>
-    <div class="s-ring"></div>
-    <div class="s-ring"></div>
-
-    <!-- Petal canvas (12 petals via JS — replaces 40 divs) -->
-    <canvas id="petalCanvas"></canvas>
-
-    <!-- Centred content -->
-    <div class="s-content">
-      <div class="s-lotus">🪷</div>
-      <div class="s-jayguru">Jayguru</div>
-      <div class="s-ornament">
-        <div class="s-ornament-line"></div>
-        <span>✦ 🙏 ✦</span>
-        <div class="s-ornament-line"></div>
-      </div>
-      <div class="s-suk">Satsang Upayojana Kendra</div>
-      <div class="s-bar-wrap"><div class="s-bar"></div></div>
+    <div class="splash-beam" style="left:30%;--r:-35deg;animation-delay:0s;animation-duration:3.5s"></div>
+    <div class="splash-beam" style="left:40%;--r:-18deg;animation-delay:0.4s;animation-duration:4s"></div>
+    <div class="splash-beam" style="left:50%;--r:0deg;animation-delay:0s;animation-duration:3s"></div>
+    <div class="splash-beam" style="left:60%;--r:18deg;animation-delay:0.6s;animation-duration:4.5s"></div>
+    <div class="splash-beam" style="left:70%;--r:35deg;animation-delay:0.2s;animation-duration:3.8s"></div>
+    <div class="splash-ring" style="width:180px;height:180px;animation-delay:0s;animation-duration:4s;border-color:rgba(255,200,80,0.2)"></div>
+    <div class="splash-ring" style="width:180px;height:180px;animation-delay:1.5s;animation-duration:4s;border-color:rgba(255,200,80,0.15)"></div>
+    <div class="splash-ring" style="width:180px;height:180px;animation-delay:3s;animation-duration:4s;border-color:rgba(255,200,80,0.1)"></div>
+    <div class="splash-petal" style="left:5%;animation-duration:7s;animation-delay:0s;font-size:22px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.9))">🪷</div>
+    <div class="splash-petal" style="left:14%;animation-duration:9s;animation-delay:1s;font-size:14px;filter:saturate(0) brightness(2.5) drop-shadow(0 0 6px rgba(255,255,255,0.9))">🪷</div>
+    <div class="splash-petal" style="left:25%;animation-duration:8s;animation-delay:2.2s;font-size:20px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.8))">🌸</div>
+    <div class="splash-petal" style="left:36%;animation-duration:6.5s;animation-delay:0.5s;font-size:16px;filter:drop-shadow(0 0 8px rgba(255,220,100,0.9))">🌺</div>
+    <div class="splash-petal" style="left:47%;animation-duration:10s;animation-delay:3s;font-size:24px;filter:saturate(0) brightness(2.5) drop-shadow(0 0 8px rgba(255,255,255,0.9))">🪷</div>
+    <div class="splash-petal" style="left:58%;animation-duration:7.5s;animation-delay:0.8s;font-size:15px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.8))">🌸</div>
+    <div class="splash-petal" style="left:69%;animation-duration:8.5s;animation-delay:1.6s;font-size:21px;filter:drop-shadow(0 0 8px rgba(255,220,100,0.9))">🌺</div>
+    <div class="splash-petal" style="left:80%;animation-duration:7s;animation-delay:2.5s;font-size:17px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.8))">🪷</div>
+    <div class="splash-petal" style="left:91%;animation-duration:9.5s;animation-delay:0.3s;font-size:23px;filter:saturate(0) brightness(2.5) drop-shadow(0 0 6px rgba(255,255,255,0.9))">🌸</div>
+    <div class="splash-petal" style="left:9%;animation-duration:6s;animation-delay:3.5s;font-size:13px;filter:drop-shadow(0 0 8px rgba(255,220,100,0.9))">🌸</div>
+    <div class="splash-petal" style="left:20%;animation-duration:8.2s;animation-delay:4s;font-size:19px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.8))">🌸</div>
+    <div class="splash-petal" style="left:31%;animation-duration:7.8s;animation-delay:2s;font-size:14px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.8))">🌺</div>
+    <div class="splash-petal" style="left:42%;animation-duration:6.2s;animation-delay:1.2s;font-size:20px;filter:drop-shadow(0 0 8px rgba(255,220,100,0.9))">🪷</div>
+    <div class="splash-petal" style="left:53%;animation-duration:9.8s;animation-delay:3.2s;font-size:16px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.8))">🌸</div>
+    <div class="splash-petal" style="left:64%;animation-duration:7.2s;animation-delay:4.5s;font-size:22px;filter:saturate(0) brightness(2.5) drop-shadow(0 0 6px rgba(255,255,255,0.9))">🌺</div>
+    <div class="splash-petal" style="left:75%;animation-duration:8.8s;animation-delay:1.4s;font-size:15px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.8))">🪷</div>
+    <div class="splash-petal" style="left:86%;animation-duration:6.8s;animation-delay:3.8s;font-size:18px;filter:drop-shadow(0 0 8px rgba(255,220,100,0.9))">🌸</div>
+    <div class="splash-petal" style="left:3%;animation-duration:10.5s;animation-delay:1.8s;font-size:12px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.8))">🌺</div>
+    <div class="splash-petal" style="left:96%;animation-duration:8s;animation-delay:0.9s;font-size:20px;filter:drop-shadow(0 0 8px rgba(255,220,100,0.9))">🌸</div>
+    <div class="splash-petal" style="left:50%;animation-duration:7s;animation-delay:5s;font-size:26px;filter:drop-shadow(0 0 12px rgba(255,200,50,1))">🌻</div>
+    <div class="splash-petal" style="left:7%;animation-duration:6.5s;animation-delay:5.5s;font-size:17px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.9))">🌸</div>
+    <div class="splash-petal" style="left:17%;animation-duration:9.2s;animation-delay:6s;font-size:21px;filter:drop-shadow(0 0 8px rgba(255,220,100,0.9))">🪷</div>
+    <div class="splash-petal" style="left:28%;animation-duration:7.4s;animation-delay:4.8s;font-size:13px;filter:saturate(0) brightness(2.5) drop-shadow(0 0 6px rgba(255,255,255,0.9))">🌺</div>
+    <div class="splash-petal" style="left:39%;animation-duration:8.6s;animation-delay:5.2s;font-size:19px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.8))">🌸</div>
+    <div class="splash-petal" style="left:61%;animation-duration:6.8s;animation-delay:6.5s;font-size:14px;filter:drop-shadow(0 0 8px rgba(255,220,100,0.9))">🪷</div>
+    <div class="splash-petal" style="left:72%;animation-duration:10.2s;animation-delay:4.2s;font-size:23px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.8))">🌺</div>
+    <div class="splash-petal" style="left:83%;animation-duration:7.6s;animation-delay:5.8s;font-size:16px;filter:saturate(0) brightness(2.5) drop-shadow(0 0 6px rgba(255,255,255,0.9))">🌸</div>
+    <div class="splash-petal" style="left:93%;animation-duration:9s;animation-delay:3s;font-size:18px;filter:drop-shadow(0 0 8px rgba(255,220,100,0.9))">🪷</div>
+    <div class="splash-petal" style="left:33%;animation-duration:8s;animation-delay:7s;font-size:25px;filter:drop-shadow(0 0 10px rgba(255,180,210,0.9))">🌸</div>
+    <div class="splash-petal" style="left:55%;animation-duration:6s;animation-delay:6.2s;font-size:12px;filter:drop-shadow(0 0 8px rgba(255,220,100,0.9))">🌺</div>
+    <div class="splash-petal" style="left:44%;animation-duration:11s;animation-delay:7.5s;font-size:20px;filter:drop-shadow(0 0 10px rgba(255,200,50,1))">🌻</div>
+    <div class="splash-petal" style="left:22%;animation-duration:7s;animation-delay:8s;font-size:15px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.8))">🌺</div>
+    <div class="splash-petal" style="left:78%;animation-duration:8.4s;animation-delay:7.2s;font-size:22px;filter:drop-shadow(0 0 8px rgba(255,180,210,0.9))">🌸</div>
+    <div class="splash-petal" style="left:11%;animation-duration:9.6s;animation-delay:8.5s;font-size:18px;filter:drop-shadow(0 0 8px rgba(255,220,100,0.9))">🪷</div>
+    <div class="splash-petal" style="left:66%;animation-duration:7.8s;animation-delay:9s;font-size:16px;filter:saturate(0) brightness(2.5) drop-shadow(0 0 6px rgba(255,255,255,0.9))">🌸</div>
+    <div class="splash-lotus">🪷</div>
+    <div class="splash-jayguru">Jayguru</div>
+    <div class="splash-ornament">
+      <div class="splash-ornament-line"></div>
+      <span>✦ 🙏 ✦</span>
+      <div class="splash-ornament-line"></div>
+    </div>
+    <div class="splash-suk" id="splashSukName">Satsang Upayojana Kendra</div>
+    <div class="splash-bar-wrap">
+      <div class="splash-bar"></div>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════
-       PERSISTENT BACKGROUND (behind React)
-       ══════════════════════════════════════ -->
+  <!-- Background -->
+  <div class="divine-bg"></div>
+  <div class="rays" id="rays"></div>
+  <div class="particles" id="particles"></div>
 
-  <!-- Outer mandala — GPU layer via will-change -->
+  <!-- Outer mandala -->
   <svg class="mandala" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-    <g fill="none" stroke="#ffffff" stroke-width="0.6" transform="translate(250,250)">
+    <g fill="none" stroke="#1d4ed8" stroke-width="0.7" transform="translate(250,250)">
       <circle r="240"/><circle r="210"/><circle r="180"/><circle r="150"/><circle r="110"/><circle r="70"/><circle r="36"/>
       <ellipse rx="28" ry="95" transform="rotate(0)"/>
       <ellipse rx="28" ry="95" transform="rotate(30)"/>
@@ -305,7 +110,7 @@
 
   <!-- Inner counter-rotating mandala -->
   <svg class="mandala2" viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg">
-    <g fill="none" stroke="#ffffff" stroke-width="0.7" transform="translate(250,250)">
+    <g fill="none" stroke="#3b82f6" stroke-width="0.8" transform="translate(250,250)">
       <circle r="220"/><circle r="170"/><circle r="120"/><circle r="70"/><circle r="30"/>
       <ellipse rx="22" ry="80" transform="rotate(0)"/>
       <ellipse rx="22" ry="80" transform="rotate(45)"/>
@@ -318,70 +123,7 @@
     </g>
   </svg>
 
-  <!-- React mounts here -->
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
-
-  <script>
-    ;(function () {
-      /* ── Petal canvas: 12 petals on one canvas — replaces 40 DOM divs ── */
-      const canvas  = document.getElementById('petalCanvas');
-      const ctx     = canvas.getContext('2d');
-      const EMOJIS  = ['🪷','🌸','🌺','🌻'];
-
-      const PETALS = Array.from({ length: 12 }, (_, i) => ({
-        emoji : EMOJIS[i % EMOJIS.length],
-        x     : (i / 12) * window.innerWidth + Math.random() * 60 - 30,
-        y     : -Math.random() * window.innerHeight * 0.6,
-        size  : 13 + Math.random() * 13,
-        speed : 0.55 + Math.random() * 0.75,
-        drift : (Math.random() - 0.5) * 0.45,
-        alpha : 0.65 + Math.random() * 0.3,
-      }));
-
-      function resize() {
-        canvas.width  = window.innerWidth;
-        canvas.height = window.innerHeight;
-      }
-      resize();
-      window.addEventListener('resize', resize, { passive: true });
-
-      let raf;
-      function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        for (const p of PETALS) {
-          ctx.globalAlpha = p.alpha;
-          ctx.font        = `${p.size}px serif`;
-          ctx.fillText(p.emoji, p.x, p.y);
-          p.y += p.speed;
-          p.x += p.drift;
-          if (p.y > canvas.height + 40) { p.y = -40; p.x = Math.random() * canvas.width; }
-        }
-        ctx.globalAlpha = 1;
-        raf = requestAnimationFrame(draw);
-      }
-      draw();
-
-      /* ── Pause all animation when tab is hidden (saves CPU/GPU) ── */
-      const mandalas = document.querySelectorAll('.mandala, .mandala2');
-      document.addEventListener('visibilitychange', () => {
-        const s = document.hidden ? 'paused' : 'running';
-        mandalas.forEach(el => el.style.animationPlayState = s);
-        if (document.hidden) { cancelAnimationFrame(raf); } else { draw(); }
-      });
-
-      /* ── Dismiss splash after bar completes (2.5s) ── */
-      const splash = document.getElementById('splash');
-      setTimeout(() => {
-        splash.style.transition  = 'opacity 0.55s ease';
-        splash.style.opacity     = '0';
-        splash.style.pointerEvents = 'none';
-        setTimeout(() => {
-          splash.remove();
-          cancelAnimationFrame(raf); // stop canvas loop — no longer visible
-        }, 560);
-      }, 2500);
-    })();
-  </script>
 </body>
 </html>

@@ -65,14 +65,6 @@ if (pc) {
   }
 }
 
-// ── PERFORMANCE: Pause mandala animations when tab is hidden ─
-document.addEventListener('visibilitychange', () => {
-  const state = document.hidden ? 'paused' : 'running'
-  document.querySelectorAll('.mandala, .mandala2').forEach(el => {
-    el.style.animationPlayState = state
-  })
-})
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AppShell />
