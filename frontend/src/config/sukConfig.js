@@ -38,7 +38,7 @@ export const SUK_CONFIG = {
   },
   'marathahalli': {
     key: 'marathahalli', name: 'Marathahalli SUK',
-    shortName: 'Marathahalli SUK', emoji: '🪷', location: 'Marathahalli',
+    shortName: 'Marathahalli SUK', emoji: '🪷', location: 'marathahalli',
     scriptUrl: WORKER_URL, apiKey: 'marathahalli', configured: true,
     features: { satsangBooking: false, messages: false },
   },
@@ -50,7 +50,6 @@ export const SUK_CONFIG = {
   'domlur':                    { key: 'domlur',                    shortName: 'Domlur SUK',                       configured: false, features: {} },
   'sarjapura-road':            { key: 'sarjapura-road',            shortName: 'Sarjapura Road SUK',               configured: false, features: {} },
   'jp-park':                   { key: 'jp-park',                   shortName: 'J P Park SUK',                     configured: false, features: {} },
-  // 'marathahalli':              { key: 'marathahalli',              shortName: 'Marathahalli SUK',                 configured: false, features: {} },
   'dasarahalli':               { key: 'dasarahalli',               shortName: 'Dasarahalli SUK',                  configured: false, features: {} },
   'kamakshipalya':             { key: 'kamakshipalya',             shortName: 'Kamakshipalya / Kottigepalya SUK', configured: false, features: {} },
   'anantha-nagar':             { key: 'anantha-nagar',             shortName: 'Anantha Nagar SUK',                configured: false, features: {} },
