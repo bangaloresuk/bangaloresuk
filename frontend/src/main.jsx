@@ -4,10 +4,10 @@ import AppShell from './components/AppShell'
 import './styles/global.css'
 
 // ── Splash fade after 2.8s ───────────────────────────────────
-// setTimeout(() => {
-//   const splash = document.getElementById('splash')
-//   if (splash) splash.classList.add('hidden')
-// }, 1000)
+setTimeout(() => {
+  const splash = document.getElementById('splash')
+  if (splash) splash.classList.add('hidden')
+}, 2800)
 
 // ── Light rays ───────────────────────────────────────────────
 const raysEl = document.getElementById('rays')
