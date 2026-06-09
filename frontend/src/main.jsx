@@ -7,7 +7,7 @@ import './styles/global.css'
 setTimeout(() => {
   const splash = document.getElementById('splash')
   if (splash) splash.classList.add('hidden')
-}, 2800)
+}, 1000)
 
 // ── Light rays ───────────────────────────────────────────────
 const raysEl = document.getElementById('rays')
