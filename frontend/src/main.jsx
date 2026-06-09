@@ -9,7 +9,7 @@ setTimeout(() => {
   if (splash) splash.classList.add('hidden')
 }, 2800)
 
-// ── Light rays ───────────────────────────────────────────────
+// ── Light rays (golden, not blue) ────────────────────────────
 const raysEl = document.getElementById('rays')
 if (raysEl) {
   const rayCount = 18
@@ -30,14 +30,15 @@ if (raysEl) {
 // ── Floating particles ───────────────────────────────────────
 const pc = document.getElementById('particles')
 if (pc) {
+  // ── FIXED: gold/warm particle colours that show on dark bg ──
   const colors = [
     'rgba(255,200,50,0.7)',
     'rgba(212,175,55,0.6)',
-    'rgba(59,130,246,0.5)',
-    'rgba(99,165,255,0.4)',
-    'rgba(255,255,255,0.75)',
-    'rgba(147,197,253,0.5)',
     'rgba(255,230,130,0.55)',
+    'rgba(255,255,255,0.6)',
+    'rgba(147,197,253,0.4)',
+    'rgba(99,165,255,0.35)',
+    'rgba(255,180,80,0.5)',
   ]
   const emojis = ['🪷','🪷','🪷','🪷','🪷','🪷','🪷']
   for (let i = 0; i < 55; i++) {
@@ -64,6 +65,14 @@ if (pc) {
     pc.appendChild(p)
   }
 }
+
+// ── Pause animations when tab is hidden (saves CPU/GPU) ──────
+document.addEventListener('visibilitychange', () => {
+  const state = document.hidden ? 'paused' : 'running'
+  document.querySelectorAll('.mandala, .mandala2').forEach(el => {
+    el.style.animationPlayState = state
+  })
+})
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
