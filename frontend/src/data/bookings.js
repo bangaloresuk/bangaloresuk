@@ -1,5 +1,4 @@
-// ─── BSUK Booking data + devotee builder ─────────────────────
-// Source: Bannerghatta Road SUK Google Sheet (229 rows)
+
 
 export const RAW_BOOKINGS = [
   ["2026-02-27","Bhagirathi Muduli","9036084523"],
