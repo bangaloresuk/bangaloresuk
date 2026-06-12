@@ -837,7 +837,7 @@ export default function DashboardTab({ bookings=[], satsangBookings=[] }) {
         </div>
       )}
 
-      {page==='devotees' && <DevoteeTracker />}
+      {page==='devotees' && <DevoteeTracker bookings={bookings} />}
 
       {/* Footer */}
       <div style={{textAlign:'center',padding:'10px 0 6px',
