@@ -123,14 +123,12 @@ function Badge({ status }) {
 
 function ScoreBar({ score, status }) {
   return (
-    <>
-      <div style={{display:'flex',alignItems:'center',gap:5}}>
-        <div style={{flex:1,height:5,borderRadius:3,background:'rgba(239,246,255,0.9)',overflow:'hidden'}}>
-          <div style={{height:5,borderRadius:3,background:C[status],width:score+'%',transition:'width .4s'}}/>
-        </div>
+    <div style={{display:'flex',alignItems:'center',gap:8,minWidth:80}}>
+      <div style={{flex:1,height:5,borderRadius:3,background:'rgba(239,246,255,0.9)',overflow:'hidden'}}>
+        <div style={{height:'100%',borderRadius:3,background:C[status],width:score+'%',transition:'width .4s'}}/>
       </div>
-      <span style={{fontSize:10,color:'rgba(29,78,216,0.4)',minWidth:22}}>{score}</span>
-    </>
+      <span style={{fontSize:11,color:'rgba(29,78,216,0.6)',minWidth:22,textAlign:'right',fontWeight:700}}>{score}</span>
+    </div>
   )
 }
 
@@ -143,7 +141,6 @@ function DetailDrawer({ dev, onClose }) {
   })
   const mCounts = cols.map(ym => dev.monthMap[ym] || 0)
   
-  const dateSet = new Set(dev.pastDates)
   const firstDate = dev.pastDates ? new Date(dev.pastDates+'T00:00:00') : new Date()
   const weeks=[], wLabels=[]
   let prevM=''
@@ -241,7 +238,7 @@ function HeatmapTable({ devs }) {
           {devs.map(d=>(
             <tr key={d.mobile}>
               <td style={{padding:'5px 8px',borderBottom:'1px solid rgba(59,130,246,0.07)',whiteSpace:'nowrap'}}>
-                <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,minWidth:'180px'}}>
                   <Av name={d.name} size={22}/>
                   <span style={{fontSize:12,color:'#1e3a8a',fontWeight:600}}>{d.name}</span>
                 </div>
@@ -272,11 +269,15 @@ function AttentionStrip({ devs }) {
     <div style={{background:'#fef3c7',border:'1px solid #fcd34d',borderRadius:14,padding:'12px 16px',marginBottom:14}}>
       <div style={{fontSize:12,fontWeight:800,color:'#92400e',marginBottom:10}}>⚠️ Needs your attention</div>
       {needs.map(d=>(
-        <div key={d.mobile} style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',fontSize:12,marginBottom:7}}>
+        <div key={d.mobile} style={{display:'flex',alignItems:'center',gap:12,fontSize:12,marginBottom:8,width:'100%',flexWrap:'nowrap'}}>
           <Av name={d.name} size={22}/>
-          <span style={{fontWeight:700,color:'#78350f'}}>{d.name}</span>
-          <span style={{color:'rgba(120,53,15,0.6)'}}>— last seen <b>{d.daysSince}d ago</b> ({d.lastPast})</span>
-          <Badge status={d.status}/>
+          <div style={{display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
+            <span style={{fontWeight:700,color:'#78350f',whiteSpace:'nowrap'}}>{d.name}</span>
+            <span style={{color:'rgba(120,53,15,0.6)'}}>— last seen <b>{d.daysSince === 9999 ? '—' : d.daysSince + 'd ago'}</b> {d.lastPast ? `(${d.lastPast})` : ''}</span>
+          </div>
+          <div style={{marginLeft:'auto',flexShrink:0}}>
+            <Badge status={d.status}/>
+          </div>
         </div>
       ))}
     </div>
@@ -386,7 +387,8 @@ export default function DevoteeTracker({ bookings = [] }) {
           style={{flex:'1 1 180px',padding:'9px 12px',borderRadius:10,border:'1px solid rgba(59,130,246,0.2)',background:'rgba(239,246,255,0.8)',fontSize:13,outline:'none'}}/>
         <select value={filter} onChange={e=>setFilter(e.target.value)}
           style={{padding:'9px 12px',borderRadius:10,border:'1px solid rgba(59,130,246,0.2)',background:'rgba(239,246,255,0.8)',fontSize:13,cursor:'pointer'}}>
-          <option value="all">All devotees</option>          <option value="active">Active (≤30d)</option>
+          <option value="all">All devotees</option>
+          <option value="active">Active (≤30d)</option>
           <option value="at-risk">At risk (31–90d)</option>
           <option value="inactive">Inactive (90d+)</option>
         </select>
@@ -488,7 +490,8 @@ export default function DevoteeTracker({ bookings = [] }) {
           </div>
           <div style={{overflowX:'auto'}}>
             <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
-              <thead>                <tr>
+              <thead>
+                <tr>
                   {['Devotee','Mobile','Past bookings','Upcoming','Last booking','Days since','Score','Status'].map(h=>(
                     <th key={h} style={{textAlign:'left',padding:'8px 10px',fontSize:10,fontWeight:800,color:'rgba(29,78,216,0.5)',textTransform:'uppercase',letterSpacing:'0.8px',borderBottom:'1px solid rgba(59,130,246,0.15)',whiteSpace:'nowrap'}}>{h}</th>
                   ))}
@@ -500,21 +503,21 @@ export default function DevoteeTracker({ bookings = [] }) {
                     style={{cursor:'pointer'}}
                     onMouseEnter={e=>e.currentTarget.style.background='rgba(239,246,255,0.6)'}
                     onMouseLeave={e=>e.currentTarget.style.background='transparent'}>
-                    <td style={{padding:'9px 10px',borderBottom:'1px solid rgba(59,130,246,0.08)'}}>
-                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    <td style={{padding:'9px 10px',borderBottom:'1px solid rgba(59,130,246,0.08)',whiteSpace:'nowrap',verticalAlign:'middle'}}>
+                      <div style={{display:'flex',alignItems:'center',gap:10,minWidth:'180px'}}>
                         <Av name={d.name} size={28}/>
                         <span style={{fontFamily:"'Cinzel',serif",fontWeight:700,color:'#1e3a8a',fontSize:12}}>{d.name}</span>
                       </div>
                     </td>
-                    <td style={{padding:'9px 10px',color:'rgba(29,78,216,0.45)',fontSize:11,borderBottom:'1px solid rgba(59,130,246,0.08)'}}>{d.mobile}</td>
-                    <td style={{padding:'9px 10px',fontWeight:900,color:'#1e3a8a',fontSize:14,borderBottom:'1px solid rgba(59,130,246,0.08)'}}>{d.total}</td>
-                    <td style={{padding:'9px 10px',borderBottom:'1px solid rgba(59,130,246,0.08)'}}>
+                    <td style={{padding:'9px 10px',color:'rgba(29,78,216,0.45)',fontSize:11,borderBottom:'1px solid rgba(59,130,246,0.08)',whiteSpace:'nowrap',verticalAlign:'middle'}}>{d.mobile}</td>
+                    <td style={{padding:'9px 10px',fontWeight:900,color:'#1e3a8a',fontSize:14,borderBottom:'1px solid rgba(59,130,246,0.08)',whiteSpace:'nowrap',verticalAlign:'middle'}}>{d.total}</td>
+                    <td style={{padding:'9px 10px',borderBottom:'1px solid rgba(59,130,246,0.08)',whiteSpace:'nowrap',verticalAlign:'middle'}}>
                       {d.futureCount>0?<span style={{background:'#dbeafe',color:'#1e40af',padding:'1px 7px',borderRadius:20,fontWeight:700,fontSize:11}}>{d.futureCount} upcoming</span>:'—'}
                     </td>
-                    <td style={{padding:'9px 10px',color:'rgba(29,78,216,0.5)',fontSize:11,borderBottom:'1px solid rgba(59,130,246,0.08)'}}>{d.lastPast||'—'}</td>
-                    <td style={{padding:'9px 10px',fontWeight:800,fontSize:13,borderBottom:'1px solid rgba(59,130,246,0.08)',color:d.daysSince>90?'#dc2626':d.daysSince>30?'#b45309':'#15803d'}}>{d.daysSince===9999?'—':d.daysSince+'d'}</td>
-                    <td style={{padding:'9px 10px',borderBottom:'1px solid rgba(59,130,246,0.08)'}}><ScoreBar score={d.score} status={d.status}/></td>
-                    <td style={{padding:'9px 10px',borderBottom:'1px solid rgba(59,130,246,0.08)'}}><Badge status={d.status}/></td>
+                    <td style={{padding:'9px 10px',color:'rgba(29,78,216,0.5)',fontSize:11,borderBottom:'1px solid rgba(59,130,246,0.08)',whiteSpace:'nowrap',verticalAlign:'middle'}}>{d.lastPast||'—'}</td>
+                    <td style={{padding:'9px 10px',fontWeight:800,fontSize:13,borderBottom:'1px solid rgba(59,130,246,0.08)',whiteSpace:'nowrap',verticalAlign:'middle',color:d.daysSince>90?'#dc2626':d.daysSince>30?'#b45309':'#15803d'}}>{d.daysSince===9999?'—':d.daysSince+'d'}</td>
+                    <td style={{padding:'9px 10px',borderBottom:'1px solid rgba(59,130,246,0.08)',verticalAlign:'middle'}}><ScoreBar score={d.score} status={d.status}/></td>
+                    <td style={{padding:'9px 10px',borderBottom:'1px solid rgba(59,130,246,0.08)',verticalAlign:'middle'}}><Badge status={d.status}/></td>
                   </tr>
                 ))}
               </tbody>
