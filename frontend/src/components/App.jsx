@@ -125,6 +125,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
   // Address edit
   const [editingAddress, setEditingAddress] = React.useState(null);
   const [editAddressVal, setEditAddressVal] = React.useState("");
+  const [editMapsVal,    setEditMapsVal]    = React.useState("");
   const [savingAddress, setSavingAddress] = React.useState(false);
   const [addressMsg, setAddressMsg] = React.useState({});
 
@@ -314,31 +315,28 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
     setCancelling(null);
   };
 
-  const handleUpdateAddress = async (bookingId, newAddress) => {
+  const handleUpdateAddress = async (bookingId, newAddress, newMapsLink) => {
     setSavingAddress(true);
     try {
-      const isLink = newAddress.startsWith("http") || newAddress.includes("maps.google") ||
-                     newAddress.includes("goo.gl") || newAddress.includes("maps.app");
-      const result = await api.post({
-        action: "updateAddress",
-        id:     bookingId,
-        place:  newAddress,   // store as-is — text or maps link, all goes to Place column
-      });
+      const parts = [newAddress.trim(), (newMapsLink||"").trim()].filter(Boolean);
+      const combined = parts.join("  ");
+      // FIXED: use api.update (PATCH /bookings/{id}/address) not api.post
+      const result = await api.update(bookingId, combined);
       if (result.success) {
-        // Update local state — place field stores both text address and maps links
         setShareResults(prev => prev.map(b =>
-          b.id === bookingId ? { ...b, place: newAddress } : b
+          b.id === bookingId ? { ...b, place: combined } : b
         ));
-        // also update bookings state so cancel section is fresh
-        setAddressMsg(prev => ({ ...prev, [bookingId]: "✅ Address updated!" }));
+        setAddressMsg(prev => ({ ...prev, [bookingId]: "Address updated!" }));
         setEditingAddress(null);
+        setEditAddressVal("");
+        setEditMapsVal("");
         fetchBookings();
         setTimeout(() => setAddressMsg(prev => { const n={...prev}; delete n[bookingId]; return n; }), 3000);
       } else {
-        setAddressMsg(prev => ({ ...prev, [bookingId]: "❌ " + result.message }));
+        setAddressMsg(prev => ({ ...prev, [bookingId]: "Error: " + (result.message || "Update failed") }));
       }
     } catch(e) {
-      setAddressMsg(prev => ({ ...prev, [bookingId]: "❌ Network error." }));
+      setAddressMsg(prev => ({ ...prev, [bookingId]: "Network error. Please try again." }));
     }
     setSavingAddress(false);
   };
@@ -1952,22 +1950,40 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                             )}
                             {editingAddress === b.id && (
                               <div style={{ display:"flex", flexDirection:"column", gap:8, marginTop:4 }}>
-                                <input className="divine-input" placeholder="Address or Google Maps link"
-                                  value={editAddressVal} onChange={e=>setEditAddressVal(e.target.value)}
-                                  style={{ fontSize:12, padding:"9px 12px" }} autoFocus/>
+                                <div style={{ fontSize:11, fontWeight:700, color:"rgba(29,78,216,0.55)", textTransform:"uppercase", letterSpacing:"0.6px" }}>
+                                  Address / Location name
+                                </div>
+                                <input className="divine-input"
+                                  placeholder="e.g. Flat 301, Upkar Manor, Arekere"
+                                  value={editAddressVal}
+                                  onChange={e => setEditAddressVal(e.target.value)}
+                                  style={{ fontSize:13, padding:"10px 12px" }}
+                                  autoFocus/>
+                                <div style={{ fontSize:11, fontWeight:700, color:"rgba(29,78,216,0.55)", textTransform:"uppercase", letterSpacing:"0.6px", marginTop:2 }}>
+                                  Google Maps link (optional)
+                                </div>
+                                <input className="divine-input"
+                                  placeholder="Paste Google Maps link — https://maps.app.goo.gl/..."
+                                  value={editMapsVal}
+                                  onChange={e => setEditMapsVal(e.target.value)}
+                                  style={{ fontSize:13, padding:"10px 12px" }}/>
                                 <div style={{ display:"flex", gap:8 }}>
-                                  <button disabled={savingAddress||!editAddressVal.trim()}
-                                    onClick={() => handleUpdateAddress(b.id, editAddressVal.trim())}
-                                    style={{ flex:1, padding:"9px", border:"none", borderRadius:8,
+                                  <button
+                                    disabled={savingAddress || (!editAddressVal.trim() && !editMapsVal.trim())}
+                                    onClick={() => handleUpdateAddress(b.id, editAddressVal.trim(), editMapsVal.trim())}
+                                    style={{ flex:1, padding:"10px", border:"none", borderRadius:8,
                                       background:"linear-gradient(135deg,#1d4ed8,#3b82f6)",
-                                      color:"#fff", fontWeight:700, fontSize:12, cursor:"pointer",
-                                      opacity:(savingAddress||!editAddressVal.trim())?0.6:1 }}>
-                                    {savingAddress ? "⏳ Saving..." : "✅ Save"}
+                                      color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer",
+                                      opacity:(savingAddress||(!editAddressVal.trim()&&!editMapsVal.trim()))?0.6:1 }}>
+                                    {savingAddress ? "Saving..." : "Save address"}
                                   </button>
-                                  <button onClick={()=>setEditingAddress(null)}
-                                    style={{ padding:"9px 14px", border:"1px solid rgba(30,64,175,0.2)",
+                                  <button
+                                    onClick={() => { setEditingAddress(null); setEditAddressVal(""); setEditMapsVal(""); }}
+                                    style={{ padding:"10px 16px", border:"1px solid rgba(30,64,175,0.2)",
                                       borderRadius:8, background:"#fff", color:"#6b7280",
-                                      fontWeight:600, fontSize:12, cursor:"pointer" }}>Cancel</button>
+                                      fontWeight:600, fontSize:13, cursor:"pointer" }}>
+                                    Cancel
+                                  </button>
                                 </div>
                               </div>
                             )}
