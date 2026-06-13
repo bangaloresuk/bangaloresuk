@@ -1537,14 +1537,18 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
 
           {/* ══ BHADRA PARIKRAMA SATSANG / MATRI-SAMMELAN / SAVAN PARIKRAMA — Coming Soon ══ */}
           {dataReady && (bookMode === "bhadra" || bookMode === "matri" || bookMode === "savan") && (() => {
-            const INFO = {
-              bhadra: { icon:"🌸", label:"Bhadra Parikrama Satsang", color:"#7c3aed", bg:"rgba(124,58,237,0.06)", border:"rgba(124,58,237,0.2)", desc:"Register for the sacred Bhadra Parikrama Satsang gathering." },
-              matri:  { icon:"🌺", label:"Matri-Sammelan",           color:"#db2777", bg:"rgba(219,39,119,0.06)", border:"rgba(219,39,119,0.2)", desc:"Join the divine Matri-Sammelan congregation." },
-              savan:  { icon:"🌿", label:"Savan Parikrama",          color:"#16a34a", bg:"rgba(22,163,74,0.06)",  border:"rgba(22,163,74,0.2)",  desc:"Register for the auspicious Savan Parikrama event." },
+            const SPECIAL_INFO = {
+              bhadra: { icon:"🌸", label:"Bhadra Parikrama Satsang", color:"#7c3aed", bg:"rgba(124,58,237,0.06)", border:"rgba(124,58,237,0.2)", btnGrad:"linear-gradient(135deg,#5b21b6,#7c3aed,#a78bfa)", shadow:"rgba(124,58,237,0.35)" },
+              matri:  { icon:"🌺", label:"Matri-Sammelan",           color:"#db2777", bg:"rgba(219,39,119,0.06)", border:"rgba(219,39,119,0.2)", btnGrad:"linear-gradient(135deg,#9d174d,#db2777,#f472b6)", shadow:"rgba(219,39,119,0.35)" },
+              savan:  { icon:"🌿", label:"Savan Parikrama",          color:"#16a34a", bg:"rgba(22,163,74,0.06)",  border:"rgba(22,163,74,0.2)",  btnGrad:"linear-gradient(135deg,#14532d,#16a34a,#4ade80)",  shadow:"rgba(22,163,74,0.35)" },
             };
-            const t = INFO[bookMode];
+            const t = SPECIAL_INFO[bookMode];
+            const existingForType = satsangBookings.filter(b => b.occasion && b.occasion === t.label);
+            const isDupSpecial = (date, time) => existingForType.some(b => b.date === date && b.time.trim() === time.trim());
+
             return (
               <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+
                 <div style={{ textAlign:"center", marginBottom:4 }}>
                   <div style={{ fontFamily:"'Cinzel',serif", color:t.color, fontSize:16, fontWeight:700 }}>
                     {t.icon} {t.label}
@@ -1552,81 +1556,136 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                   <div style={{ height:1, background:`linear-gradient(90deg,transparent,${t.color}66,transparent)`, marginTop:10 }}/>
                 </div>
 
-                {/* Name */}
+                {existingForType.length > 0 && (
+                  <div>
+                    <div style={{ fontSize:11, fontWeight:700, color:t.color, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:8 }}>
+                      {t.icon} {existingForType.length} slot{existingForType.length!==1?"s":""} already booked
+                    </div>
+                    {existingForType.sort((a,b)=>a.date.localeCompare(b.date)).map(b => (
+                      <div key={b.id} style={{ padding:"10px 12px", borderRadius:10, marginBottom:6,
+                        background:t.bg, border:`1px solid ${t.border}`, fontSize:12 }}>
+                        <div style={{ fontWeight:700, color:t.color }}>{b.name}</div>
+                        <div style={{ color:"rgba(0,0,0,0.5)", marginTop:2 }}>
+                          📅 {b.date} · ⏰ {b.time}
+                          {b.venue ? ` · 📍 ${b.venue}` : ""}
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ height:1, background:`${t.color}22`, margin:"8px 0" }}/>
+                  </div>
+                )}
+
+                {satsangError && (
+                  <div className={satsangShake?"shake":""} style={{ padding:"11px 14px", borderRadius:10,
+                    fontSize:13, fontWeight:600, background:"#fef3c7", color:"#92400e", whiteSpace:"pre-line" }}>
+                    {satsangError}
+                  </div>
+                )}
+
                 <div>
-                  <label className="divine-label" style={{ color:`${t.color}bb` }}>👤 Person's Name</label>
-                  <input className="divine-input" placeholder="Enter full name"
-                    value={form.name}
-                    style={{ borderColor:t.border }}
-                    onChange={e => { setError(""); setForm({...form, name:e.target.value}); }}/>
+                  <label className="divine-label" style={{ color:`${t.color}bb` }}>👤 Host Name</label>
+                  <input className="divine-input" placeholder="Name of the person hosting"
+                    value={satsangForm.name} style={{ borderColor:t.border }}
+                    onChange={e=>{setSatsangError("");setSatsangForm({...satsangForm,name:e.target.value})}}/>
                 </div>
 
-                {/* Mobile */}
                 <div>
                   <label className="divine-label" style={{ color:`${t.color}bb` }}>📱 Mobile Number</label>
-                  <input className="divine-input" placeholder="Enter 10-digit mobile number"
-                    type="tel" maxLength="10"
-                    value={form.mobile}
-                    style={{ borderColor:t.border }}
-                    onChange={e => { setError(""); setForm({...form, mobile:e.target.value.replace(/[^0-9]/g,"")}); }}/>
+                  <input className="divine-input" placeholder="10-digit mobile" type="tel" maxLength={10}
+                    value={satsangForm.mobile} style={{ borderColor:t.border }}
+                    onChange={e=>{setSatsangError("");setSatsangForm({...satsangForm,mobile:e.target.value.replace(/[^0-9]/g,"")})}}/>
                 </div>
 
-                {/* Location */}
                 <div>
-                  <label className="divine-label" style={{ color:`${t.color}bb` }}>📍 Location</label>
-                  <input className="divine-input" placeholder="Town / City"
-                    value={form.place}
-                    style={{ borderColor:t.border }}
-                    onChange={e => { setError(""); setForm({...form, place:e.target.value}); }}/>
-                </div>
-
-                {/* Date */}
-                <div>
-                  <label className="divine-label" style={{ color:`${t.color}bb` }}>📅 Preferred Date</label>
-                  <input type="date" className="divine-input" value={form.date} min={getTodayStr()}
+                  <label className="divine-label" style={{ color:`${t.color}bb` }}>📅 Date</label>
+                  <input type="date" className="divine-input" value={satsangForm.date} min={getTodayStr()}
                     style={{ fontSize:13, width:"100%", cursor:"pointer", borderColor:t.border }}
-                    onChange={e => { setError(""); setForm({...form, date:e.target.value}); }}/>
+                    onChange={e=>{setSatsangError("");setSatsangForm({...satsangForm,date:e.target.value})}}/>
                 </div>
 
-                {/* Info note */}
-                <div style={{
-                  padding:"12px 14px", borderRadius:12, fontSize:12, lineHeight:1.7,
-                  background:t.bg, border:`1px solid ${t.border}`, color:t.color, fontWeight:600,
-                }}>
-                  {t.icon} {t.desc}<br/>
-                  <span style={{ opacity:0.7, fontWeight:500 }}>Our team will confirm your registration shortly. 🙏</span>
+                <div>
+                  <label className="divine-label" style={{ color:`${t.color}bb` }}>⏰ Time</label>
+                  <input className="divine-input" placeholder="e.g. 4:30 PM onwards"
+                    value={satsangForm.time} style={{ borderColor:t.border }}
+                    onChange={e=>{setSatsangError("");setSatsangForm({...satsangForm,time:e.target.value})}}/>
+                  {satsangForm.date && satsangForm.time && isDupSpecial(satsangForm.date, satsangForm.time) && (
+                    <div style={{ marginTop:5, padding:"8px 12px", borderRadius:8, fontSize:12,
+                      background:"#fee2e2", border:"1px solid #fca5a5", color:"#b91c1c", fontWeight:600 }}>
+                      ⚠️ This date & time is already booked for {t.label}. Please choose a different slot.
+                    </div>
+                  )}
                 </div>
 
-                {error && (
-                  <div className={shake?"shake":""} style={{
-                    padding:"14px 18px", borderRadius:12, fontSize:13, lineHeight:1.7,
-                    background:"#fee2e2", border:"1.5px solid #fca5a5", color:"#b91c1c",
-                  }}>{error}</div>
-                )}
+                <div>
+                  <label className="divine-label" style={{ color:`${t.color}bb` }}>📍 Venue / Address</label>
+                  <input className="divine-input" placeholder="Full address of the venue"
+                    value={satsangForm.venue} style={{ borderColor:t.border }}
+                    onChange={e=>setSatsangForm({...satsangForm,venue:e.target.value})}/>
+                </div>
+
+                <div>
+                  <label className="divine-label" style={{ color:`${t.color}bb` }}>📌 Google Maps Link (optional)</label>
+                  <input className="divine-input" placeholder="Paste Google Maps link"
+                    value={satsangForm.mapsLink} style={{ borderColor:t.border }}
+                    onChange={e=>setSatsangForm({...satsangForm,mapsLink:e.target.value})}/>
+                </div>
+
+                <div>
+                  <label className="divine-label" style={{ color:`${t.color}bb` }}>🙏 Hosted By (optional)</label>
+                  <input className="divine-input" placeholder="e.g. Bannerghatta SUK"
+                    value={satsangForm.hostedBy} style={{ borderColor:t.border }}
+                    onChange={e=>setSatsangForm({...satsangForm,hostedBy:e.target.value})}/>
+                </div>
 
                 <div style={{ marginTop:4 }}>
                   <button
+                    disabled={satsangSubmitting || (satsangForm.date && satsangForm.time && isDupSpecial(satsangForm.date, satsangForm.time))}
+                    onClick={async () => {
+                      const { name, mobile, venue, date, time } = satsangForm;
+                      if (!name.trim())  { triggerSatsangError("⚠️ Please enter the host name."); return; }
+                      if (!/^[0-9]{10}$/.test(mobile.trim())) { triggerSatsangError("⚠️ Valid 10-digit mobile required."); return; }
+                      if (!date)         { triggerSatsangError("⚠️ Please select a date."); return; }
+                      if (date < getTodayStr()) { triggerSatsangError("⚠️ Please select today or a future date."); return; }
+                      if (!time.trim())  { triggerSatsangError("⚠️ Please enter the time."); return; }
+                      if (!venue.trim()) { triggerSatsangError("⚠️ Please enter the venue."); return; }
+                      if (isDupSpecial(date, time)) { triggerSatsangError("⚠️ This date & time is already booked for " + t.label + ". Please choose a different slot."); return; }
+                      if (!isConfigured) { triggerSatsangError("⚠️ Please configure the Script URL."); return; }
+                      setSatsangSubmitting(true);
+                      try {
+                        const result = await satsangApi.post({
+                          action:"add", name:name.trim(), mobile:mobile.trim(),
+                          venue:venue.trim(), date, time:time.trim(),
+                          hostedBy:satsangForm.hostedBy.trim() || (state.ACTIVE_SUK ? sukLabel(state.ACTIVE_SUK) : "SUK"),
+                          mapsLink:satsangForm.mapsLink.trim(),
+                          occasion:t.label,
+                          day:getDayName(date),
+                        });
+                        if (result.success) {
+                          setSatsangConfirm({ ...satsangForm, id:result.id, day:getDayName(date), occasion:t.label });
+                          setSatsangForm({ name:"", mobile:"", venue:"", date:"", time:"", hostedBy:"", mapsLink:"", occasion:"" });
+                          fetchSatsangBookings();
+                        } else { triggerSatsangError(result.message || "⚠️ Booking failed. Please try again."); }
+                      } catch(e) { triggerSatsangError("⚠️ Network error. Please try again."); }
+                      setSatsangSubmitting(false);
+                    }}
                     style={{
                       width:"100%", padding:"15px", border:"none", borderRadius:13,
-                      background:`linear-gradient(135deg,${t.color} 0%,${t.color}cc 100%)`,
-                      color:"#fff", fontWeight:900, fontSize:16, cursor:"pointer",
+                      background:(satsangForm.date&&satsangForm.time&&isDupSpecial(satsangForm.date,satsangForm.time))?"#e5e7eb":t.btnGrad,
+                      color:(satsangForm.date&&satsangForm.time&&isDupSpecial(satsangForm.date,satsangForm.time))?"#9ca3af":"#fff",
+                      fontWeight:900, fontSize:16,
+                      cursor:(satsangForm.date&&satsangForm.time&&isDupSpecial(satsangForm.date,satsangForm.time))?"not-allowed":"pointer",
                       fontFamily:"'Cinzel',serif", letterSpacing:"0.5px",
-                      boxShadow:`0 5px 22px ${t.color}44`, transition:"all 0.3s",
-                    }}
-                    onClick={() => {
-                      if (!form.name.trim())   { triggerError("⚠️ Please enter your name.");           return; }
-                      if (!/^[0-9]{10}$/.test(form.mobile.trim())) { triggerError("⚠️ Please enter a valid 10-digit mobile number."); return; }
-                      if (!form.date)          { triggerError("⚠️ Please select a date.");             return; }
-                      alert(`✅ Registration received!\n\n${t.icon} ${t.label}\n👤 ${form.name}\n📅 ${form.date}\n\nOur team will contact you shortly. Jayguru 🙏`);
-                      setForm({ name:"", mobile:"", place:"", time:"", date:"", mapsLink:"" });
-                    }}
-                  >
-                    {t.icon}  Register for {t.label}
+                      boxShadow:`0 5px 22px ${t.shadow}`, transition:"all 0.3s",
+                      opacity:satsangSubmitting?0.7:1,
+                    }}>
+                    {satsangSubmitting ? "⏳ Booking..." : `${t.icon}  Register for ${t.label}`}
                   </button>
                 </div>
+
               </div>
             );
           })()}
+
 
           {/* ── Inline Cancel Section ── */}
           {feat.cancelBooking && (<div style={{ marginTop:20 }}>
