@@ -17,7 +17,7 @@
 import React from 'react'
 import { SUK_CONFIG, DEFAULT_FEATURES, sukLabel } from '../config/sukConfig.js'
 import state from '../config/activeSuk.js'
-import { api, satsangApi, photoApi } from '../services/api.js'
+import { api, satsangApi, bhadraApi, matriApi, savanApi, photoApi } from '../services/api.js'
 import {
   formatDate, formatDateWithDay, getDayName, getTodayStr,
   cleanTime, cleanPhotoDate, maskMobile,
@@ -34,6 +34,133 @@ import { DataLoadingOverlay } from './shared/DataLoadingOverlay.jsx'
 import PrayerTimesTab from './tabs/PrayerTimesTab.jsx'
 import GalleryTab     from './tabs/GalleryTab.jsx'
 import DashboardTab   from './tabs/DashboardTab.jsx'
+
+// ════════════════════════════════════════════════════════════════
+//  LocationPicker — reusable "find my location" helper
+//  ─────────────────────────────────────────────────────────────
+//  Two free, no-API-key ways to fill an address + Google Maps link:
+//   1. 📍 "Use my current location" — browser GPS (navigator.geolocation)
+//      + reverse-geocode via OpenStreetMap Nominatim for a readable address.
+//   2. 🔍 Search box — forward-geocode via Nominatim, shows a dropdown
+//      of matching places; picking one fills both fields.
+//  Both write into whatever address/maps fields the caller passes in.
+// ════════════════════════════════════════════════════════════════
+function LocationPicker({ onPick, color = "#1d4ed8", placeholder = "Search for a place, area or landmark…" }) {
+  const [query,   setQuery]   = React.useState("");
+  const [results, setResults] = React.useState([]);
+  const [searching, setSearching] = React.useState(false);
+  const [locating,  setLocating]  = React.useState(false);
+  const [showResults, setShowResults] = React.useState(false);
+  const debounceRef = React.useRef(null);
+
+  const doSearch = async (q) => {
+    if (!q || q.trim().length < 3) { setResults([]); return; }
+    setSearching(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=5&q=${encodeURIComponent(q.trim())}`,
+        { headers: { "Accept-Language": "en" } }
+      );
+      const data = await res.json();
+      setResults(Array.isArray(data) ? data : []);
+      setShowResults(true);
+    } catch(e) { setResults([]); }
+    setSearching(false);
+  };
+
+  const handleQueryChange = (v) => {
+    setQuery(v);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => doSearch(v), 500);
+  };
+
+  const pickResult = (r) => {
+    const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+    onPick({
+      address:  r.display_name,
+      mapsLink: `https://maps.google.com/?q=${lat},${lon}`,
+    });
+    setQuery(r.display_name);
+    setResults([]);
+    setShowResults(false);
+  };
+
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert("Your browser doesn't support location access.");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        const mapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
+        let address = "";
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`,
+            { headers: { "Accept-Language": "en" } }
+          );
+          const data = await res.json();
+          address = data.display_name || "";
+        } catch(e) { /* ignore — maps link still works without address text */ }
+        onPick({ address, mapsLink });
+        setLocating(false);
+      },
+      (err) => {
+        alert("Couldn't get your location: " + (err.message || "Permission denied."));
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  return (
+    <div style={{ position:"relative" }}>
+      <div style={{ display:"flex", gap:8 }}>
+        <div style={{ flex:1, position:"relative" }}>
+          <input className="divine-input" placeholder={placeholder}
+            value={query}
+            onChange={e => handleQueryChange(e.target.value)}
+            onFocus={() => { if (results.length) setShowResults(true); }}
+            style={{ borderColor: `${color}33`, paddingRight: 34 }}/>
+          {searching && (
+            <span style={{ position:"absolute", right:10, top:"50%", transform:"translateY(-50%)",
+              fontSize:13, color:`${color}99` }}>⏳</span>
+          )}
+          {showResults && results.length > 0 && (
+            <div style={{
+              position:"absolute", top:"calc(100% + 4px)", left:0, right:0, zIndex:50,
+              background:"#fff", border:`1px solid ${color}33`, borderRadius:10,
+              boxShadow:"0 8px 24px rgba(0,0,0,0.12)", overflow:"hidden", maxHeight:220, overflowY:"auto"
+            }}>
+              {results.map((r,i) => (
+                <div key={i} onClick={() => pickResult(r)}
+                  style={{ padding:"9px 12px", fontSize:12, cursor:"pointer",
+                    borderBottom: i<results.length-1 ? "1px solid #f0f0f0" : "none", color:"#374151" }}
+                  onMouseDown={e => e.preventDefault()}>
+                  📍 {r.display_name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <button type="button" onClick={useCurrentLocation} disabled={locating}
+          title="Use my current location"
+          style={{
+            flexShrink:0, padding:"0 14px", borderRadius:10, border:`1px solid ${color}33`,
+            background: locating ? "#f3f4f6" : `${color}10`, color, fontWeight:700, fontSize:12,
+            cursor: locating ? "not-allowed" : "pointer", whiteSpace:"nowrap",
+          }}>
+          {locating ? "⏳" : "📍"} {locating ? "Locating…" : "My location"}
+        </button>
+      </div>
+      <div style={{ fontSize:10, color:"rgba(0,0,0,0.35)", marginTop:4 }}>
+        Search a place above, or tap "My location" to use your phone's GPS — both fill the address and maps link below.
+      </div>
+    </div>
+  );
+}
 
 function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequestSignIn }) {
   // Merge DEFAULT_FEATURES with this SUK's overrides
@@ -93,6 +220,9 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
   // Announcements
   // Satsang Booking state
   const [satsangBookings, setSatsangBookings] = React.useState([]);
+  const [bhadraBookings, setBhadraBookings] = React.useState([]);
+  const [matriBookings,  setMatriBookings]  = React.useState([]);
+  const [savanBookings,  setSavanBookings]  = React.useState([]);
   const [satsangLoadingData, setSatsangLoadingData] = React.useState(false);
   const [satsangForm, setSatsangForm] = React.useState({ name:"", mobile:"", venue:"", date:"", time:"", hostedBy:"", mapsLink:"", occasion:"" });
   const [satsangError, setSatsangError] = React.useState("");
@@ -485,7 +615,40 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
     setSatsangReady(true);
   }, [isConfigured]);
 
+  // Each special event (Bhadra / Matri / Savan) lives in its own sheet —
+  // fetched the same way as Satsang so duplicate-slot checks and the
+  // "already booked" cards work per-event-type.
+  const fetchBhadraBookings = React.useCallback(async () => {
+    if (!isConfigured) return;
+    try {
+      const d = await bhadraApi.getAll();
+      if (d.success && Array.isArray(d.data)) setBhadraBookings(d.data);
+      else if (Array.isArray(d)) setBhadraBookings(d);
+    } catch(e) { console.error('fetchBhadra error:', e); }
+  }, [isConfigured]);
+
+  const fetchMatriBookings = React.useCallback(async () => {
+    if (!isConfigured) return;
+    try {
+      const d = await matriApi.getAll();
+      if (d.success && Array.isArray(d.data)) setMatriBookings(d.data);
+      else if (Array.isArray(d)) setMatriBookings(d);
+    } catch(e) { console.error('fetchMatri error:', e); }
+  }, [isConfigured]);
+
+  const fetchSavanBookings = React.useCallback(async () => {
+    if (!isConfigured) return;
+    try {
+      const d = await savanApi.getAll();
+      if (d.success && Array.isArray(d.data)) setSavanBookings(d.data);
+      else if (Array.isArray(d)) setSavanBookings(d);
+    } catch(e) { console.error('fetchSavan error:', e); }
+  }, [isConfigured]);
+
   React.useEffect(() => { fetchSatsangBookings(); }, [fetchSatsangBookings]);
+  React.useEffect(() => { fetchBhadraBookings(); }, [fetchBhadraBookings]);
+  React.useEffect(() => { fetchMatriBookings();  }, [fetchMatriBookings]);
+  React.useEffect(() => { fetchSavanBookings();  }, [fetchSavanBookings]);
 
   const triggerSatsangError = (msg) => {
     setSatsangError(msg); setSatsangShake(true);
@@ -1246,6 +1409,17 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
               </div>
 
               <div>
+                <label className="divine-label">🌐 Find My Location</label>
+                <LocationPicker color="#1d4ed8"
+                  placeholder="Search your area, landmark, address…"
+                  onPick={({ address, mapsLink }) => setForm(prev => ({
+                    ...prev,
+                    place: address || prev.place,
+                    mapsLink: mapsLink || prev.mapsLink,
+                  }))}/>
+              </div>
+
+              <div>
                 <label className="divine-label">📍 Location</label>
                 <input className="divine-input"
                   placeholder="Type location name  OR  paste Google Maps link"
@@ -1490,6 +1664,16 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                   onChange={e=>setSatsangForm({...satsangForm,time:e.target.value})}/>
               </div>
               <div>
+                <label className="divine-label" style={{ color:"rgba(120,53,15,0.7)" }}>🌐 Find Venue Location</label>
+                <LocationPicker color="#92400e"
+                  placeholder="Search venue — area, landmark, address…"
+                  onPick={({ address, mapsLink }) => setSatsangForm(prev => ({
+                    ...prev,
+                    venue: address || prev.venue,
+                    mapsLink: mapsLink || prev.mapsLink,
+                  }))}/>
+              </div>
+              <div>
                 <label className="divine-label" style={{ color:"rgba(120,53,15,0.7)" }}>📍 Venue / Address</label>
                 <input className="divine-input" placeholder="Full address of the Satsang venue"
                   value={satsangForm.venue}
@@ -1538,12 +1722,15 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
           {/* ══ BHADRA PARIKRAMA SATSANG / MATRI-SAMMELAN / SAVAN PARIKRAMA — Coming Soon ══ */}
           {dataReady && (bookMode === "bhadra" || bookMode === "matri" || bookMode === "savan") && (() => {
             const SPECIAL_INFO = {
-              bhadra: { icon:"🌸", label:"Bhadra Parikrama Satsang", color:"#7c3aed", bg:"rgba(124,58,237,0.06)", border:"rgba(124,58,237,0.2)", btnGrad:"linear-gradient(135deg,#5b21b6,#7c3aed,#a78bfa)", shadow:"rgba(124,58,237,0.35)" },
-              matri:  { icon:"🌺", label:"Matri-Sammelan",           color:"#db2777", bg:"rgba(219,39,119,0.06)", border:"rgba(219,39,119,0.2)", btnGrad:"linear-gradient(135deg,#9d174d,#db2777,#f472b6)", shadow:"rgba(219,39,119,0.35)" },
-              savan:  { icon:"🌿", label:"Savan Parikrama",          color:"#16a34a", bg:"rgba(22,163,74,0.06)",  border:"rgba(22,163,74,0.2)",  btnGrad:"linear-gradient(135deg,#14532d,#16a34a,#4ade80)",  shadow:"rgba(22,163,74,0.35)" },
+              bhadra: { icon:"🌸", label:"Bhadra Parikrama Satsang", color:"#7c3aed", bg:"rgba(124,58,237,0.06)", border:"rgba(124,58,237,0.2)", btnGrad:"linear-gradient(135deg,#5b21b6,#7c3aed,#a78bfa)", shadow:"rgba(124,58,237,0.35)", api:bhadraApi, bookings:bhadraBookings, fetch:fetchBhadraBookings },
+              matri:  { icon:"🌺", label:"Matri-Sammelan",           color:"#db2777", bg:"rgba(219,39,119,0.06)", border:"rgba(219,39,119,0.2)", btnGrad:"linear-gradient(135deg,#9d174d,#db2777,#f472b6)", shadow:"rgba(219,39,119,0.35)", api:matriApi,  bookings:matriBookings,  fetch:fetchMatriBookings },
+              savan:  { icon:"🌿", label:"Savan Parikrama",          color:"#16a34a", bg:"rgba(22,163,74,0.06)",  border:"rgba(22,163,74,0.2)",  btnGrad:"linear-gradient(135deg,#14532d,#16a34a,#4ade80)",  shadow:"rgba(22,163,74,0.35)",  api:savanApi,  bookings:savanBookings,  fetch:fetchSavanBookings },
             };
             const t = SPECIAL_INFO[bookMode];
-            const existingForType = satsangBookings.filter(b => b.occasion && b.occasion === t.label);
+            // Each event type now lives in its own Google Sheet —
+            // existing bookings come straight from that sheet, no
+            // occasion filtering needed.
+            const existingForType = t.bookings || [];
             const isDupSpecial = (date, time) => existingForType.some(b => b.date === date && b.time.trim() === time.trim());
 
             return (
@@ -1561,7 +1748,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                     <div style={{ fontSize:11, fontWeight:700, color:t.color, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:8 }}>
                       {t.icon} {existingForType.length} slot{existingForType.length!==1?"s":""} already booked
                     </div>
-                    {existingForType.sort((a,b)=>a.date.localeCompare(b.date)).map(b => (
+                    {[...existingForType].sort((a,b)=>a.date.localeCompare(b.date)).map(b => (
                       <div key={b.id} style={{ padding:"10px 12px", borderRadius:10, marginBottom:6,
                         background:t.bg, border:`1px solid ${t.border}`, fontSize:12 }}>
                         <div style={{ fontWeight:700, color:t.color }}>{b.name}</div>
@@ -1617,6 +1804,17 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                 </div>
 
                 <div>
+                  <label className="divine-label" style={{ color:`${t.color}bb` }}>🌐 Find Venue Location</label>
+                  <LocationPicker color={t.color}
+                    placeholder="Search venue — area, landmark, address…"
+                    onPick={({ address, mapsLink }) => setSatsangForm(prev => ({
+                      ...prev,
+                      venue: address || prev.venue,
+                      mapsLink: mapsLink || prev.mapsLink,
+                    }))}/>
+                </div>
+
+                <div>
                   <label className="divine-label" style={{ color:`${t.color}bb` }}>📍 Venue / Address</label>
                   <input className="divine-input" placeholder="Full address of the venue"
                     value={satsangForm.venue} style={{ borderColor:t.border }}
@@ -1652,18 +1850,17 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                       if (!isConfigured) { triggerSatsangError("⚠️ Please configure the Script URL."); return; }
                       setSatsangSubmitting(true);
                       try {
-                        const result = await satsangApi.post({
+                        const result = await t.api.post({
                           action:"add", name:name.trim(), mobile:mobile.trim(),
                           venue:venue.trim(), date, time:time.trim(),
                           hostedBy:satsangForm.hostedBy.trim() || (state.ACTIVE_SUK ? sukLabel(state.ACTIVE_SUK) : "SUK"),
                           mapsLink:satsangForm.mapsLink.trim(),
-                          occasion:t.label,
                           day:getDayName(date),
                         });
                         if (result.success) {
                           setSatsangConfirm({ ...satsangForm, id:result.id, day:getDayName(date), occasion:t.label });
                           setSatsangForm({ name:"", mobile:"", venue:"", date:"", time:"", hostedBy:"", mapsLink:"", occasion:"" });
-                          fetchSatsangBookings();
+                          t.fetch();
                         } else { triggerSatsangError(result.message || "⚠️ Booking failed. Please try again."); }
                       } catch(e) { triggerSatsangError("⚠️ Network error. Please try again."); }
                       setSatsangSubmitting(false);
@@ -2010,6 +2207,15 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                             {editingAddress === b.id && (
                               <div style={{ display:"flex", flexDirection:"column", gap:8, marginTop:4 }}>
                                 <div style={{ fontSize:11, fontWeight:700, color:"rgba(29,78,216,0.55)", textTransform:"uppercase", letterSpacing:"0.6px" }}>
+                                  🌐 Find Location
+                                </div>
+                                <LocationPicker color="#1d4ed8"
+                                  placeholder="Search a place, area or landmark…"
+                                  onPick={({ address, mapsLink }) => {
+                                    if (address)  setEditAddressVal(address);
+                                    if (mapsLink) setEditMapsVal(mapsLink);
+                                  }}/>
+                                <div style={{ fontSize:11, fontWeight:700, color:"rgba(29,78,216,0.55)", textTransform:"uppercase", letterSpacing:"0.6px", marginTop:4 }}>
                                   Address / Location name
                                 </div>
                                 <input className="divine-input"
