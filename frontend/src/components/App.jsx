@@ -1873,7 +1873,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                             background:t.bg, border:`2px solid ${t.border}` }}>
                             <div style={{ fontSize:9, fontWeight:700, color:`${t.color}99`, textTransform:"uppercase", letterSpacing:"0.4px" }}>{dayN}</div>
                             <div style={{ fontSize:15, fontWeight:900, color:t.color, lineHeight:1.2 }}>{dd}</div>
-                            <div style={{ fontSize:8, fontWeight:800, color:t.color, marginTop:2, textAlign:"center", maxWidth:60, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{b.time||"—"}</div>
+                            <div style={{ fontSize:8, fontWeight:800, color:t.color, marginTop:2, textAlign:"center", maxWidth:60, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{cleanTime(b.time)||"—"}</div>
                             <div style={{ fontSize:8, color:`${t.color}88`, marginTop:1, maxWidth:60, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{(b.name||"").split(" ")[0]}</div>
                             <div style={{ width:6, height:6, borderRadius:"50%", background:t.color, marginTop:4 }}/>
                           </div>
@@ -2511,7 +2511,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                         </div>
                         {b.mapsLink && (
                           <a href={b.mapsLink} target="_blank" rel="noopener noreferrer"
-                            style={{ fontSize:12, color:"#d97706", fontWeight:600,
+                            style={{ fontSize:12, color:typeColors[b._type]||"#d97706", fontWeight:600,
                               textDecoration:"none", display:"block", marginTop:3 }}>
                             🗺️ View on Map
                           </a>
@@ -2647,7 +2647,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                                 <div style={{ fontFamily:"'Cinzel',serif", fontWeight:800,
                                   color:"#78350f", fontSize:14, marginBottom:4 }}>{b.name}</div>
                                 <div style={{ fontSize:13, color:"#d97706", fontWeight:700, opacity:0.8 }}>
-                                  📅 {b.day ? b.day+", " : ""}{formatDate ? formatDate(b.date) : b.date}
+                                  📅 {formatDateWithDay(b.date)}
                                 </div>
                                 <div style={{ fontSize:12, color:"#6b7280", marginTop:3 }}>
                                   ⏰ {cleanTime(b.time)} onwards
