@@ -670,6 +670,42 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
     setCancelling(null);
   };
 
+  // ── Cancel Bhadra / Matri / Savan — routes to correct API ──
+  const handleCancelSpecial = async (id, _type) => {
+    const LABEL = { satsang:"Satsang", bhadra:"Bhadra Parikrama", matri:"Matri-Sammelan", savan:"Savan Parikrama" };
+    const API   = { satsang:satsangApi, bhadra:bhadraApi, matri:matriApi, savan:savanApi };
+    const FETCH = { satsang:fetchSatsangBookings, bhadra:fetchBhadraBookings, matri:fetchMatriBookings, savan:fetchSavanBookings };
+    const SET   = {
+      satsang: v => setSatsangBookings(v),
+      bhadra:  v => setBhadraBookings(v),
+      matri:   v => setMatriBookings(v),
+      savan:   v => setSavanBookings(v),
+    };
+    const label = LABEL[_type] || "booking";
+    const api   = API[_type]   || satsangApi;
+    const fetch = FETCH[_type] || fetchSatsangBookings;
+    const setFn = SET[_type];
+    if (!window.confirm(`Are you sure you want to cancel this ${label} booking?`)) return;
+    setCancelling(id);
+    try {
+      const result = await api.cancel(id);
+      if (result.success) {
+        if (setFn) setFn(prev => prev.filter(b => b.id !== id));
+        setShareResults(prev => Array.isArray(prev) ? prev.filter(b => b.id !== id) : prev);
+        const successMsg = `✅ ${label} cancelled successfully.`;
+        setCancelMsg(successMsg); setShareMsg(successMsg);
+        await fetch();
+      } else {
+        const errMsg = "❌ Could not cancel: " + (result.message||"Please try again.");
+        setCancelMsg(errMsg); setShareMsg(errMsg);
+      }
+    } catch(e) {
+      const errMsg = "❌ Could not cancel: " + (e?.message||"Please try again.");
+      setCancelMsg(errMsg); setShareMsg(errMsg);
+    }
+    setCancelling(null);
+  };
+
   // ── Fetch satsang bookings ─────────────────────────────────
   const fetchSatsangBookings = React.useCallback(async () => {
     if (!isConfigured) { setSatsangReady(true); return; }
@@ -3027,66 +3063,65 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                                 </div>
                               );
                             }
-                            // Satsang
+                            // Satsang / Bhadra / Matri / Savan — dynamic colours per type
+                            const TC = {
+                              satsang:{ border:"rgba(217,119,6,0.2)",  bg:"rgba(255,251,235,0.75)", bar:"linear-gradient(90deg,#d97706,#fbbf2455)", name:"#78350f", time:"#d97706", badge:"#92400e", badgeBg:"rgba(217,119,6,0.1)",  adminBg:"rgba(217,119,6,0.07)",  adminBorder:"rgba(217,119,6,0.18)",  adminText:"#92400e", label:"🪔 Satsang",  cancelGrad:"linear-gradient(135deg,#92400e,#d97706)", cancelLabel:"Cancel Satsang" },
+                              bhadra: { border:"rgba(109,40,217,0.2)", bg:"rgba(245,243,255,0.75)", bar:"linear-gradient(90deg,#7c3aed,#a78bfa55)", name:"#4c1d95", time:"#7c3aed", badge:"#6d28d9", badgeBg:"rgba(109,40,217,0.1)", adminBg:"rgba(109,40,217,0.07)", adminBorder:"rgba(109,40,217,0.18)", adminText:"#6d28d9", label:"🌸 Bhadra",  cancelGrad:"linear-gradient(135deg,#5b21b6,#7c3aed)", cancelLabel:"Cancel Bhadra" },
+                              matri:  { border:"rgba(190,24,93,0.2)",  bg:"rgba(253,242,248,0.75)", bar:"linear-gradient(90deg,#db2777,#f472b655)", name:"#831843", time:"#db2777", badge:"#be185d", badgeBg:"rgba(190,24,93,0.1)",  adminBg:"rgba(190,24,93,0.07)",  adminBorder:"rgba(190,24,93,0.18)",  adminText:"#be185d", label:"🌺 Matri",   cancelGrad:"linear-gradient(135deg,#9d174d,#db2777)", cancelLabel:"Cancel Matri" },
+                              savan:  { border:"rgba(21,128,61,0.2)",  bg:"rgba(240,253,244,0.75)", bar:"linear-gradient(90deg,#16a34a,#4ade8055)", name:"#14532d", time:"#16a34a", badge:"#15803d", badgeBg:"rgba(21,128,61,0.1)",  adminBg:"rgba(21,128,61,0.07)",  adminBorder:"rgba(21,128,61,0.18)",  adminText:"#15803d", label:"🌿 Savan",   cancelGrad:"linear-gradient(135deg,#14532d,#16a34a)", cancelLabel:"Cancel Savan" },
+                            };
+                            const tc = TC[b._type] || TC.satsang;
                             return (
                               <div key={b.id} style={{ borderRadius:14, overflow:"hidden",
-                                border:"1px solid rgba(217,119,6,0.2)",
-                                background:"rgba(255,251,235,0.75)" }}>
-                                <div style={{ height:3,
-                                  background:"linear-gradient(90deg,#d97706,#fbbf2455)" }}/>
+                                border:`1px solid ${tc.border}`, background:tc.bg }}>
+                                <div style={{ height:3, background:tc.bar }}/>
                                 <div style={{ padding:"12px 14px" }}>
                                   <div style={{ display:"flex", justifyContent:"space-between",
                                     alignItems:"flex-start", gap:8, marginBottom:4 }}>
                                     <div style={{ fontFamily:"'Cinzel',serif", fontWeight:800,
-                                      color:"#78350f", fontSize:14 }}>{b.name}</div>
+                                      color:tc.name, fontSize:14 }}>{b.name}</div>
                                     <span style={{ flexShrink:0, fontSize:10, fontWeight:800,
-                                      color:"#92400e", background:"rgba(217,119,6,0.1)",
+                                      color:tc.badge, background:tc.badgeBg,
                                       padding:"2px 8px", borderRadius:20,
                                       textTransform:"uppercase", letterSpacing:"0.6px" }}>
-                                      🪔 Satsang
+                                      {tc.label}
                                     </span>
                                   </div>
-                                  <div style={{ fontSize:13, color:"#d97706",
+                                  <div style={{ fontSize:13, color:tc.time,
                                     fontWeight:700, marginBottom:3 }}>
-                                    ⏰ {cleanTime(b.time)} onwards
+                                    📅 {formatDateWithDay(b.date)} · ⏰ {cleanTime(b.time)}
                                   </div>
                                   {b.venue && (
                                     <div style={{ fontSize:12, color:"#6b7280" }}>
                                       {b.mapsLink
                                         ? <a href={b.mapsLink} target="_blank" rel="noopener noreferrer"
-                                            style={{ color:"#d97706", fontWeight:600, textDecoration:"none" }}>
+                                            style={{ color:tc.time, fontWeight:600, textDecoration:"none" }}>
                                             📍 {b.venue} · Map</a>
                                         : <>📍 {b.venue}</>}
                                     </div>
                                   )}
                                   {b.hostedBy && (
-                                    <div style={{ fontSize:12, color:"#92400e",
+                                    <div style={{ fontSize:12, color:tc.badge,
                                       fontWeight:600, marginTop:3 }}>
                                       🙏 {b.hostedBy}
                                     </div>
                                   )}
-                                  {b.occasion && (
-                                    <div style={{ fontSize:12, color:"#d97706",
-                                      fontWeight:600, marginTop:3 }}>
-                                      🪔 {b.occasion}
-                                    </div>
-                                  )}
                                   {currentUser && (
                                     <div style={{ marginTop:8, padding:"8px 10px", borderRadius:10,
-                                      background:"rgba(217,119,6,0.07)", border:"1px solid rgba(217,119,6,0.18)" }}>
-                                      <div style={{ fontSize:11, color:"#92400e", fontWeight:700, marginBottom:4,
+                                      background:tc.adminBg, border:`1px solid ${tc.adminBorder}` }}>
+                                      <div style={{ fontSize:11, color:tc.adminText, fontWeight:700, marginBottom:4,
                                         textTransform:"uppercase", letterSpacing:"0.8px" }}>🔐 Admin Info</div>
                                       <div style={{ fontSize:12, color:"#374151", fontWeight:600 }}>📱 {b.mobile}</div>
                                       <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🪪 {b.id}</div>
                                       {b.bookedAt && <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🕒 {b.bookedAt}</div>}
                                       <button
                                         disabled={cancelling === b.id}
-                                        onClick={() => handleCancelSatsang(b.id)}
+                                        onClick={() => handleCancelSpecial(b.id, b._type)}
                                         style={{ marginTop:8, width:"100%", padding:"7px", border:"none", borderRadius:8,
-                                          background:"linear-gradient(135deg,#92400e,#d97706)",
+                                          background:tc.cancelGrad,
                                           color:"#fff", fontWeight:700, fontSize:12, cursor:"pointer",
                                           opacity: cancelling===b.id ? 0.6 : 1 }}>
-                                        {cancelling===b.id ? "⏳ Cancelling..." : "🗑️ Cancel Satsang"}
+                                        {cancelling===b.id ? "⏳ Cancelling..." : `🗑️ ${tc.cancelLabel}`}
                                       </button>
                                     </div>
                                   )}
