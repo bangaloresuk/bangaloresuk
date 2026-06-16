@@ -162,6 +162,63 @@ function LocationPicker({ onPick, color = "#1d4ed8", placeholder = "Search for a
   );
 }
 
+// ── EventDateChips — reusable date-chip picker with live availability ──
+// Shows next `days` dates as scrollable chips. Each chip shows the
+// day name, date number, a "FREE" / "N BOOKED" label, and a status
+// dot — based on how many `bookings` exist for that date.
+function EventDateChips({ bookings = [], value, onChange, color = "#1d4ed8", idPrefix = "evChips", days = 14 }) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const chips = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date(today); d.setDate(today.getDate()+i);
+    const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,"0"), dd = String(d.getDate()).padStart(2,"0");
+    const dateStr = `${y}-${m}-${dd}`;
+    const count = bookings.filter(b => b.date === dateStr).length;
+    const sel = value === dateStr;
+    chips.push(
+      <button key={dateStr} type="button"
+        onClick={() => onChange(dateStr)}
+        style={{ display:"flex", flexDirection:"column", alignItems:"center",
+          padding:"8px 6px", borderRadius:12, flexShrink:0,
+          border:`2px solid ${sel?color:count>0?"#fcd34d":"rgba(59,130,246,0.18)"}`,
+          background:sel?color:count>0?"#fef3c7":"#f0f9ff",
+          cursor:"pointer", minWidth:54,
+          transition:"all 0.15s",
+          boxShadow:sel?`0 3px 12px ${color}55`:"none" }}>
+        <div style={{ fontSize:9, fontWeight:700, textTransform:"uppercase",
+          color:sel?"rgba(255,255,255,0.8)":"#6b7280", letterSpacing:"0.5px" }}>
+          {i===0?"Today":["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]}
+        </div>
+        <div style={{ fontSize:16, fontWeight:900, marginTop:2,
+          color:sel?"#fff":"#1e3a8a" }}>{dd}</div>
+        <div style={{ fontSize:8, marginTop:3, fontWeight:800, whiteSpace:"nowrap",
+          color:sel?"rgba(255,255,255,0.9)":count>0?"#d97706":"#16a34a" }}>
+          {count>0?`${count} BOOKED`:"FREE"}
+        </div>
+        <div style={{ display:"flex", gap:2, marginTop:4 }}>
+          <div style={{ width:5, height:5, borderRadius:"50%", background:count>0?"#f59e0b":"#22c55e" }}/>
+        </div>
+      </button>
+    );
+  }
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+      <button type="button" onClick={() => { const el=document.getElementById(idPrefix); if(el) el.scrollBy({left:-160,behavior:"smooth"}); }}
+        style={{ flexShrink:0, width:32, height:32, borderRadius:"50%", border:"none",
+          background:`linear-gradient(135deg,${color},${color}cc)`, color:"#fff",
+          fontSize:18, cursor:"pointer", fontWeight:900, lineHeight:1 }}>‹</button>
+      <div id={idPrefix} style={{ display:"flex", gap:6, overflowX:"auto", flex:1,
+        paddingBottom:6, scrollbarWidth:"none" }}>
+        {chips}
+      </div>
+      <button type="button" onClick={() => { const el=document.getElementById(idPrefix); if(el) el.scrollBy({left:160,behavior:"smooth"}); }}
+        style={{ flexShrink:0, width:32, height:32, borderRadius:"50%", border:"none",
+          background:`linear-gradient(135deg,${color},${color}cc)`, color:"#fff",
+          fontSize:18, cursor:"pointer", fontWeight:900, lineHeight:1 }}>›</button>
+    </div>
+  );
+}
+
 function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequestSignIn }) {
   // Merge DEFAULT_FEATURES with this SUK's overrides
   const feat = React.useMemo(() => ({
@@ -1240,43 +1297,77 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
           letterSpacing:"4px", textTransform:"uppercase", marginTop:5 }}>
           {state.ACTIVE_SUK ? `${state.ACTIVE_SUK.emoji} ${sukLabel(state.ACTIVE_SUK)}${state.ACTIVE_SUK.location ? " · "+state.ACTIVE_SUK.location : ""} ${state.ACTIVE_SUK.emoji}` : "🪷 Satsang Upayojana Kendra 🪷"}
         </p>
-        {(bookings.length > 0 || satsangBookings.length > 0) && (
+        {(bookings.length > 0 || satsangBookings.length > 0 || bhadraBookings.length > 0 || matriBookings.length > 0 || savanBookings.length > 0) && (
           <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
             gap:8, marginTop:10, flexWrap:"wrap" }}>
             {bookings.length > 0 && (
-              <div
-                onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
-                style={{ display:"inline-flex", alignItems:"center", gap:5,
-                  padding:"5px 12px", borderRadius:20,
-                  background:"rgba(29,78,216,0.07)",
-                  border:"1px solid rgba(29,78,216,0.14)",
+              <div onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+                style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
+                  background:"rgba(29,78,216,0.07)", border:"1px solid rgba(29,78,216,0.14)",
                   cursor:"pointer", transition:"background 0.2s" }}
                 onMouseEnter={e => e.currentTarget.style.background="rgba(29,78,216,0.15)"}
                 onMouseLeave={e => e.currentTarget.style.background="rgba(29,78,216,0.07)"}>
                 <span style={{ fontSize:12 }}>🌅</span>
-                <span style={{ fontSize:11, color:"rgba(29,78,216,0.6)", fontWeight:700,
-                  fontFamily:"'Cinzel',serif", letterSpacing:"0.5px" }}>
+                <span style={{ fontSize:11, color:"rgba(29,78,216,0.6)", fontWeight:700, fontFamily:"'Cinzel',serif", letterSpacing:"0.5px" }}>
                   {bookings.length} Prayer{bookings.length!==1?"s":""}
                 </span>
                 <span style={{ fontSize:9, color:"rgba(29,78,216,0.4)", marginLeft:2 }}>›</span>
               </div>
             )}
             {feat.satsangBooking && satsangBookings.length > 0 && (
-              <div
-                onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
-                style={{ display:"inline-flex", alignItems:"center", gap:5,
-                  padding:"5px 12px", borderRadius:20,
-                  background:"rgba(217,119,6,0.07)",
-                  border:"1px solid rgba(217,119,6,0.18)",
+              <div onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+                style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
+                  background:"rgba(217,119,6,0.07)", border:"1px solid rgba(217,119,6,0.18)",
                   cursor:"pointer", transition:"background 0.2s" }}
                 onMouseEnter={e => e.currentTarget.style.background="rgba(217,119,6,0.18)"}
                 onMouseLeave={e => e.currentTarget.style.background="rgba(217,119,6,0.07)"}>
                 <span style={{ fontSize:12 }}>🪔</span>
-                <span style={{ fontSize:11, color:"rgba(120,53,15,0.65)", fontWeight:700,
-                  fontFamily:"'Cinzel',serif", letterSpacing:"0.5px" }}>
+                <span style={{ fontSize:11, color:"rgba(120,53,15,0.65)", fontWeight:700, fontFamily:"'Cinzel',serif", letterSpacing:"0.5px" }}>
                   {satsangBookings.length} Satsang{satsangBookings.length!==1?"s":""}
                 </span>
                 <span style={{ fontSize:9, color:"rgba(120,53,15,0.4)", marginLeft:2 }}>›</span>
+              </div>
+            )}
+            {bhadraBookings.length > 0 && (
+              <div onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+                style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
+                  background:"rgba(124,58,237,0.07)", border:"1px solid rgba(124,58,237,0.2)",
+                  cursor:"pointer", transition:"background 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.background="rgba(124,58,237,0.18)"}
+                onMouseLeave={e => e.currentTarget.style.background="rgba(124,58,237,0.07)"}>
+                <span style={{ fontSize:12 }}>🌸</span>
+                <span style={{ fontSize:11, color:"rgba(109,40,217,0.75)", fontWeight:700, fontFamily:"'Cinzel',serif", letterSpacing:"0.5px" }}>
+                  {bhadraBookings.length} Bhadra{bhadraBookings.length!==1?"s":""}
+                </span>
+                <span style={{ fontSize:9, color:"rgba(109,40,217,0.4)", marginLeft:2 }}>›</span>
+              </div>
+            )}
+            {matriBookings.length > 0 && (
+              <div onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+                style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
+                  background:"rgba(219,39,119,0.07)", border:"1px solid rgba(219,39,119,0.2)",
+                  cursor:"pointer", transition:"background 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.background="rgba(219,39,119,0.18)"}
+                onMouseLeave={e => e.currentTarget.style.background="rgba(219,39,119,0.07)"}>
+                <span style={{ fontSize:12 }}>🌺</span>
+                <span style={{ fontSize:11, color:"rgba(190,24,93,0.75)", fontWeight:700, fontFamily:"'Cinzel',serif", letterSpacing:"0.5px" }}>
+                  {matriBookings.length} Matri{matriBookings.length!==1?"s":""}
+                </span>
+                <span style={{ fontSize:9, color:"rgba(190,24,93,0.4)", marginLeft:2 }}>›</span>
+              </div>
+            )}
+            {savanBookings.length > 0 && (
+              <div onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+                style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
+                  background:"rgba(22,163,74,0.07)", border:"1px solid rgba(22,163,74,0.2)",
+                  cursor:"pointer", transition:"background 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.background="rgba(22,163,74,0.18)"}
+                onMouseLeave={e => e.currentTarget.style.background="rgba(22,163,74,0.07)"}>
+                <span style={{ fontSize:12 }}>🌿</span>
+                <span style={{ fontSize:11, color:"rgba(21,128,61,0.75)", fontWeight:700, fontFamily:"'Cinzel',serif", letterSpacing:"0.5px" }}>
+                  {savanBookings.length} Savan{savanBookings.length!==1?"s":""}
+                </span>
+                <span style={{ fontSize:9, color:"rgba(21,128,61,0.4)", marginLeft:2 }}>›</span>
               </div>
             )}
           </div>
@@ -1655,6 +1746,19 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                 <input type="date" className="divine-input" value={satsangForm.date} min={getTodayStr()}
                   style={{ fontSize:13, width:"100%", cursor:"pointer", borderColor:"rgba(217,119,6,0.3)" }}
                   onChange={e=>{setSatsangError("");setSatsangForm({...satsangForm,date:e.target.value})}}/>
+                  <div style={{ fontSize:10, color:"rgba(120,53,15,0.45)", marginTop:5, paddingLeft:2 }}>
+                    ☝️ Tap a chip below for quick pick, or use the calendar above
+                  </div>
+                  <div style={{ marginTop:6 }}>
+                    <EventDateChips
+                      bookings={satsangBookings}
+                      value={satsangForm.date}
+                      onChange={d => { setSatsangError(""); setSatsangForm({...satsangForm, date:d}); }}
+                      color="#92400e"
+                      idPrefix="satChipScroll"
+                      days={14}
+                    />
+                  </div>
               </div>
               <div>
                 <label className="divine-label" style={{ color:"rgba(120,53,15,0.7)" }}>⏰ Time</label>
@@ -1788,6 +1892,19 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                   <input type="date" className="divine-input" value={satsangForm.date} min={getTodayStr()}
                     style={{ fontSize:13, width:"100%", cursor:"pointer", borderColor:t.border }}
                     onChange={e=>{setSatsangError("");setSatsangForm({...satsangForm,date:e.target.value})}}/>
+                  <div style={{ fontSize:10, color:`${t.color}77`, marginTop:5, paddingLeft:2 }}>
+                    ☝️ Tap a chip below for quick pick, or use the calendar above
+                  </div>
+                  <div style={{ marginTop:6 }}>
+                    <EventDateChips
+                      bookings={t.bookings}
+                      value={satsangForm.date}
+                      onChange={d => { setSatsangError(""); setSatsangForm({...satsangForm, date:d}); }}
+                      color={t.color}
+                      idPrefix={`${bookMode}ChipScroll`}
+                      days={14}
+                    />
+                  </div>
                 </div>
 
                 <div>
