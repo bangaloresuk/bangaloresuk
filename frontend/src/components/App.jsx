@@ -235,7 +235,8 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
   const [error,      setError]      = React.useState("");
   const [shake,      setShake]      = React.useState(false);
   const [activeTab,  setActiveTab]  = React.useState("book");
-  const [manageTab,  setManageTab]  = React.useState(null);
+  const [manageTab,       setManageTab]       = React.useState(null);
+  const [allBookingsFilter, setAllBookingsFilter] = React.useState("all");
   const [bookMode,   setBookMode]   = React.useState("prayer"); // "prayer" | "satsang"
   // Reset bookMode if current mode is disabled for this SUK
   React.useEffect(() => {
@@ -456,7 +457,10 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
       setSatsangBookings(freshSatsang);
       const prayerFound  = freshBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"prayer" }));
       const satsangFound = freshSatsang.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"satsang" }));
-      const combined = [...prayerFound, ...satsangFound].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+      const bhadraFnd    = bhadraBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"bhadra" }));
+      const matriFnd     = matriBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"matri" }));
+      const savanFnd     = savanBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"savan" }));
+      const combined = [...prayerFound, ...satsangFound, ...bhadraFnd, ...matriFnd, ...savanFnd].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
       if (combined.length === 0) {
         setCancelMsg("❌ No bookings found for this mobile number.");
         setCancelResults([]);
@@ -618,7 +622,10 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
     // Search BOTH prayer and satsang bookings
     const prayerFound   = bookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"prayer" }));
     const satsangFound  = satsangBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"satsang" }));
-    const combined = [...prayerFound, ...satsangFound]
+    const bhadraFound   = bhadraBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"bhadra" }));
+    const matriFound    = matriBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"matri" }));
+    const savanFound    = savanBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"savan" }));
+    const combined = [...prayerFound, ...satsangFound, ...bhadraFound, ...matriFound, ...savanFound]
       .sort((a,b) => (a.date||"").localeCompare(b.date||"")); // oldest first (Jan → Feb → Mar)
     if (combined.length === 0) {
       setShareMsg("❌ No bookings found for this mobile number.");
@@ -1301,7 +1308,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
           <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
             gap:8, marginTop:10, flexWrap:"wrap" }}>
             {bookings.length > 0 && (
-              <div onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+              <div onClick={() => { setAllBookingsFilter("prayer"); setActiveTab("manage"); setManageTab("all"); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
                   background:"rgba(29,78,216,0.07)", border:"1px solid rgba(29,78,216,0.14)",
                   cursor:"pointer", transition:"background 0.2s" }}
@@ -1315,7 +1322,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
               </div>
             )}
             {feat.satsangBooking && satsangBookings.length > 0 && (
-              <div onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+              <div onClick={() => { setAllBookingsFilter("satsang"); setActiveTab("manage"); setManageTab("all"); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
                   background:"rgba(217,119,6,0.07)", border:"1px solid rgba(217,119,6,0.18)",
                   cursor:"pointer", transition:"background 0.2s" }}
@@ -1329,7 +1336,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
               </div>
             )}
             {bhadraBookings.length > 0 && (
-              <div onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+              <div onClick={() => { setAllBookingsFilter("bhadra"); setActiveTab("manage"); setManageTab("all"); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
                   background:"rgba(124,58,237,0.07)", border:"1px solid rgba(124,58,237,0.2)",
                   cursor:"pointer", transition:"background 0.2s" }}
@@ -1343,7 +1350,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
               </div>
             )}
             {matriBookings.length > 0 && (
-              <div onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+              <div onClick={() => { setAllBookingsFilter("matri"); setActiveTab("manage"); setManageTab("all"); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
                   background:"rgba(219,39,119,0.07)", border:"1px solid rgba(219,39,119,0.2)",
                   cursor:"pointer", transition:"background 0.2s" }}
@@ -1357,7 +1364,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
               </div>
             )}
             {savanBookings.length > 0 && (
-              <div onClick={() => { setActiveTab("manage"); setManageTab("all"); }}
+              <div onClick={() => { setAllBookingsFilter("savan"); setActiveTab("manage"); setManageTab("all"); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
                   background:"rgba(22,163,74,0.07)", border:"1px solid rgba(22,163,74,0.2)",
                   cursor:"pointer", transition:"background 0.2s" }}
@@ -1852,16 +1859,24 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                     <div style={{ fontSize:11, fontWeight:700, color:t.color, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:8 }}>
                       {t.icon} {existingForType.length} slot{existingForType.length!==1?"s":""} already booked
                     </div>
-                    {[...existingForType].sort((a,b)=>a.date.localeCompare(b.date)).map(b => (
-                      <div key={b.id} style={{ padding:"10px 12px", borderRadius:10, marginBottom:6,
-                        background:t.bg, border:`1px solid ${t.border}`, fontSize:12 }}>
-                        <div style={{ fontWeight:700, color:t.color }}>{b.name}</div>
-                        <div style={{ color:"rgba(0,0,0,0.5)", marginTop:2 }}>
-                          📅 {b.date} · ⏰ {b.time}
-                          {b.venue ? ` · 📍 ${b.venue}` : ""}
-                        </div>
-                      </div>
-                    ))}
+                    <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
+                      {[...existingForType].sort((a,b)=>a.date.localeCompare(b.date)).map(b => {
+                        const dd = (b.date||"").slice(8,10);
+                        const dayIdx = b.date ? new Date(b.date+"T00:00:00").getDay() : -1;
+                        const dayN = dayIdx>=0?["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][dayIdx]:"";
+                        return (
+                          <div key={b.id} style={{ display:"flex", flexDirection:"column", alignItems:"center",
+                            padding:"7px 10px", borderRadius:12, minWidth:52,
+                            background:t.bg, border:`2px solid ${t.border}` }}>
+                            <div style={{ fontSize:9, fontWeight:700, color:`${t.color}99`, textTransform:"uppercase", letterSpacing:"0.4px" }}>{dayN}</div>
+                            <div style={{ fontSize:15, fontWeight:900, color:t.color, lineHeight:1.2 }}>{dd}</div>
+                            <div style={{ fontSize:8, fontWeight:800, color:t.color, marginTop:2, textAlign:"center", maxWidth:60, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{b.time||"—"}</div>
+                            <div style={{ fontSize:8, color:`${t.color}88`, marginTop:1, maxWidth:60, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{(b.name||"").split(" ")[0]}</div>
+                            <div style={{ width:6, height:6, borderRadius:"50%", background:t.color, marginTop:4 }}/>
+                          </div>
+                        );
+                      })}
+                    </div>
                     <div style={{ height:1, background:`${t.color}22`, margin:"8px 0" }}/>
                   </div>
                 )}
@@ -2250,8 +2265,11 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                 {shareResults.length} Booking{shareResults.length > 1 ? "s" : ""} Found
                 <span style={{ fontSize:11, color:"rgba(29,78,216,0.4)", fontWeight:400,
                   marginLeft:8, textTransform:"none" }}>
-                  ({shareResults.filter(b=>b._type==="prayer").length} Prayer ·{" "}
-                   {shareResults.filter(b=>b._type==="satsang").length} Satsang)
+                  ({shareResults.filter(b=>b._type==="prayer").length} Prayer
+                  {shareResults.filter(b=>b._type==="satsang").length > 0 ? ` · ${shareResults.filter(b=>b._type==="satsang").length} Satsang` : ""}
+                  {shareResults.filter(b=>b._type==="bhadra").length > 0 ? ` · ${shareResults.filter(b=>b._type==="bhadra").length} Bhadra` : ""}
+                  {shareResults.filter(b=>b._type==="matri").length > 0 ? ` · ${shareResults.filter(b=>b._type==="matri").length} Matri` : ""}
+                  {shareResults.filter(b=>b._type==="savan").length > 0 ? ` · ${shareResults.filter(b=>b._type==="savan").length} Savan` : ""})
                 </span>
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
@@ -2633,86 +2651,97 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
         const todayStr = getTodayStr();
 
         const AllBookingsView = () => {
-          const nowYM = todayStr.slice(0, 7); // "YYYY-MM"
+          const nowYM = todayStr.slice(0, 7);
           const [activeYM,  setActiveYM]  = React.useState(nowYM);
-          const [typeTab,   setTypeTab]   = React.useState("all"); // all|prayer|satsang
+          const [typeTab,   setTypeTab]   = React.useState(allBookingsFilter || "all");
           const [search,    setSearch]    = React.useState("");
           const [showPast,  setShowPast]  = React.useState(false);
+          const [dateFrom,  setDateFrom]  = React.useState("");
+          const [dateTo,    setDateTo]    = React.useState("");
+          const [showRange, setShowRange] = React.useState(false);
+
+          // Sync with pill click filter
+          React.useEffect(() => {
+            if (allBookingsFilter && allBookingsFilter !== "all") {
+              setTypeTab(allBookingsFilter);
+            }
+          }, [allBookingsFilter]);
 
           const allItems = [
-            ...bookings.map(b       => ({ ...b, _type:"prayer"  })),
+            ...bookings.map(b        => ({ ...b, _type:"prayer"  })),
             ...satsangBookings.map(b => ({ ...b, _type:"satsang" })),
+            ...bhadraBookings.map(b  => ({ ...b, _type:"bhadra"  })),
+            ...matriBookings.map(b   => ({ ...b, _type:"matri"   })),
+            ...savanBookings.map(b   => ({ ...b, _type:"savan"   })),
           ];
 
-          // All YYYY-MM months that have data, sorted asc
           const allMonths = React.useMemo(() => {
             const seen = new Set(allItems.map(b => (b.date||"").slice(0,7)).filter(Boolean));
-            // always include current month even if empty
             seen.add(nowYM);
             return Array.from(seen).sort();
-          }, [bookings, satsangBookings]);
+          }, [bookings, satsangBookings, bhadraBookings, matriBookings, savanBookings]);
 
           const monthIdx = allMonths.indexOf(activeYM);
-
           const goPrev = () => { if (monthIdx > 0) setActiveYM(allMonths[monthIdx - 1]); };
           const goNext = () => { if (monthIdx < allMonths.length - 1) setActiveYM(allMonths[monthIdx + 1]); };
-
-          const monthLabel = new Date(activeYM + "-01T00:00:00")
-            .toLocaleDateString("en-IN", { month:"long", year:"numeric" });
+          const monthLabel = new Date(activeYM + "-01T00:00:00").toLocaleDateString("en-IN", { month:"long", year:"numeric" });
 
           const isSearching = search.trim().length > 0;
+          const isRangeActive = showRange && (dateFrom || dateTo);
 
-          // When searching — spans ALL months; otherwise current month only (today + future)
+          const typeMatch = (b) => {
+            if (typeTab === "all")     return true;
+            return b._type === typeTab;
+          };
+
           const filtered = allItems.filter(b => {
-            if (typeTab === "prayer"  && b._type !== "prayer")  return false;
-            if (typeTab === "satsang" && b._type !== "satsang") return false;
+            if (!typeMatch(b)) return false;
             if (isSearching) {
               const q = search.toLowerCase();
               return (b.name||"").toLowerCase().includes(q)
+                  || (b.mobile||"").includes(q)
                   || (b.venue||"").toLowerCase().includes(q)
-                  || (b.hostedBy||"").toLowerCase().includes(q);
+                  || (b.place||"").toLowerCase().includes(q);
             }
-            // Only today and future dates in the list
+            if (isRangeActive) {
+              const d = b.date || "";
+              if (dateFrom && d < dateFrom) return false;
+              if (dateTo   && d > dateTo)   return false;
+              return true;
+            }
             return (b.date||"").startsWith(activeYM) && (b.date||"") >= todayStr;
           }).sort((a, b) => (a.date||"").localeCompare(b.date||""));
 
-          // Past items for the active month/type (excluded from main list)
-          const pastFiltered = isSearching ? [] : allItems.filter(b => {
-            if (typeTab === "prayer"  && b._type !== "prayer")  return false;
-            if (typeTab === "satsang" && b._type !== "satsang") return false;
+          const pastFiltered = (isSearching || isRangeActive) ? [] : allItems.filter(b => {
+            if (!typeMatch(b)) return false;
             return (b.date||"").startsWith(activeYM) && (b.date||"") < todayStr;
-          }).sort((a, b) => (b.date||"").localeCompare(a.date||"")); // newest first
+          }).sort((a, b) => (b.date||"").localeCompare(a.date||""));
 
-          // Group past by date
           const pastGroups = {};
-          pastFiltered.forEach(b => {
-            const d = b.date || "Unknown";
-            if (!pastGroups[d]) pastGroups[d] = [];
-            pastGroups[d].push(b);
-          });
+          pastFiltered.forEach(b => { const d = b.date||"Unknown"; if (!pastGroups[d]) pastGroups[d]=[]; pastGroups[d].push(b); });
           const pastSortedDates = Object.keys(pastGroups).sort((a,b) => b.localeCompare(a));
 
-          // Group by date
           const groups = {};
-          filtered.forEach(b => {
-            const d = b.date || "Unknown";
-            if (!groups[d]) groups[d] = [];
-            groups[d].push(b);
-          });
+          filtered.forEach(b => { const d = b.date||"Unknown"; if (!groups[d]) groups[d]=[]; groups[d].push(b); });
           const sortedDates = Object.keys(groups).sort();
 
-          // Counts for type tabs
           const monthItems = allItems.filter(b => (b.date||"").startsWith(activeYM));
           const counts = {
             all:     monthItems.length,
             prayer:  monthItems.filter(b => b._type==="prayer").length,
             satsang: monthItems.filter(b => b._type==="satsang").length,
+            bhadra:  monthItems.filter(b => b._type==="bhadra").length,
+            matri:   monthItems.filter(b => b._type==="matri").length,
+            savan:   monthItems.filter(b => b._type==="savan").length,
           };
 
           const TYPE_TABS = [
-            { id:"all",     label:"All",     icon:"📋" },
-            { id:"prayer",  label:"Prayer",  icon:"🙏" },
-            { id:"satsang", label:"Satsang", icon:"🪔" },
+            { id:"all",     label:"All",     icon:"📋", color:"#1e3a8a" },
+            { id:"prayer",  label:"Prayer",  icon:"🙏", color:"#1d4ed8" },
+            { id:"satsang", label:"Satsang", icon:"🪔", color:"#92400e" },
+            { id:"bhadra",  label:"Bhadra",  icon:"🌸", color:"#6d28d9" },
+            { id:"matri",   label:"Matri",   icon:"🌺", color:"#be185d" },
+            { id:"savan",   label:"Savan",   icon:"🌿", color:"#15803d" },
           ];
 
           return (
@@ -2766,35 +2795,65 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                 </div>
 
                 )}
-                {/* Row 2: All | Prayer | Satsang tabs */}
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr",
-                  gap:6, marginBottom:12 }}>
+                {/* Row 2: All | Prayer | Satsang | Bhadra | Matri | Savan */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:6, marginBottom:12 }}>
                   {TYPE_TABS.map(t => {
                     const active = typeTab === t.id;
                     return (
-                      <button key={t.id} onClick={() => setTypeTab(t.id)}
-                        style={{ padding:"9px 0", borderRadius:12,
+                      <button key={t.id} onClick={() => { setTypeTab(t.id); setAllBookingsFilter(t.id); }}
+                        style={{ padding:"8px 4px", borderRadius:12,
                           cursor:"pointer", fontFamily:"'Cinzel',serif",
-                          fontSize:12, fontWeight:800, transition:"all 0.18s",
-                          background: active
-                            ? t.id==="satsang" ? "linear-gradient(135deg,#78350f,#d97706)"
-                              : t.id==="prayer" ? "linear-gradient(135deg,#1d4ed8,#3b82f6)"
-                              : "linear-gradient(135deg,#1e3a8a,#3b82f6)"
-                            : "rgba(239,246,255,0.7)",
+                          fontSize:10, fontWeight:800, transition:"all 0.18s",
+                          background: active ? `linear-gradient(135deg,${t.color}dd,${t.color})` : "rgba(239,246,255,0.7)",
                           color: active ? "#fff" : "rgba(29,78,216,0.5)",
-                          boxShadow: active ? "0 3px 12px rgba(29,78,216,0.2)" : "none",
+                          boxShadow: active ? `0 3px 12px ${t.color}44` : "none",
                           border: active ? "none" : "1px solid rgba(59,130,246,0.15)" }}>
-                        <div>{t.icon}</div>
-                        <div style={{ fontSize:11 }}>{t.label}</div>
-                        <div style={{ fontSize:10, marginTop:1,
-                          opacity: active ? 0.85 : 0.55,
-                          color: active ? "#fff" : "#1d4ed8",
-                          fontFamily:"sans-serif", fontWeight:700 }}>
-                          {counts[t.id]}
+                        <div style={{ fontSize:13 }}>{t.icon}</div>
+                        <div style={{ fontSize:10 }}>{t.label}</div>
+                        <div style={{ fontSize:10, marginTop:1, opacity:active?0.9:0.55,
+                          color:active?"#fff":t.color, fontFamily:"sans-serif", fontWeight:700 }}>
+                          {counts[t.id] ?? 0}
                         </div>
                       </button>
                     );
                   })}
+                </div>
+
+                {/* Date range filter */}
+                <div style={{ marginBottom:10 }}>
+                  <button onClick={() => setShowRange(r => !r)}
+                    style={{ width:"100%", padding:"8px 12px", borderRadius:10,
+                      background: showRange ? "rgba(29,78,216,0.1)" : "rgba(239,246,255,0.7)",
+                      border:"1px solid rgba(59,130,246,0.2)", cursor:"pointer",
+                      fontSize:12, color:"rgba(29,78,216,0.65)", fontWeight:700,
+                      display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <span>📅 Filter by date range {isRangeActive ? `(${dateFrom||"any"} → ${dateTo||"any"})` : ""}</span>
+                    <span>{showRange ? "▲" : "▼"}</span>
+                  </button>
+                  {showRange && (
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:8 }}>
+                      <div>
+                        <div style={{ fontSize:10, color:"rgba(29,78,216,0.5)", fontWeight:700, marginBottom:3 }}>FROM</div>
+                        <input type="date" className="divine-input" value={dateFrom}
+                          style={{ fontSize:12, padding:"8px 10px" }}
+                          onChange={e => setDateFrom(e.target.value)}/>
+                      </div>
+                      <div>
+                        <div style={{ fontSize:10, color:"rgba(29,78,216,0.5)", fontWeight:700, marginBottom:3 }}>TO</div>
+                        <input type="date" className="divine-input" value={dateTo}
+                          style={{ fontSize:12, padding:"8px 10px" }}
+                          onChange={e => setDateTo(e.target.value)}/>
+                      </div>
+                      {isRangeActive && (
+                        <button onClick={() => { setDateFrom(""); setDateTo(""); }}
+                          style={{ gridColumn:"1/-1", padding:"7px", borderRadius:8, border:"none",
+                            background:"rgba(239,246,255,0.8)", color:"rgba(29,78,216,0.6)",
+                            fontSize:12, fontWeight:700, cursor:"pointer" }}>
+                          ✕ Clear date range
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Row 3: Search */}
