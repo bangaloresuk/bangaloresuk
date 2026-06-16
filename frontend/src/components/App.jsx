@@ -269,7 +269,8 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
   const [cancelMsg, setCancelMsg] = React.useState("");
   const [cancelling, setCancelling] = React.useState(null); // stores the ID being cancelled
   // Retrieve & reshare
-  const [shareMobile, setShareMobile] = React.useState("");
+  const [shareMobile,        setShareMobile]        = React.useState("");
+  const [retrieveTypeFilter, setRetrieveTypeFilter] = React.useState("prayer");
   const [shareResults, setShareResults] = React.useState(null);
   const [shareMsg, setShareMsg] = React.useState("");
   // Past-toggle state for Retrieve tab and Cancel section (component-level to obey hook rules)
@@ -625,7 +626,9 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
     const bhadraFound   = bhadraBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"bhadra" }));
     const matriFound    = matriBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"matri" }));
     const savanFound    = savanBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"savan" }));
-    const combined = [...prayerFound, ...satsangFound, ...bhadraFound, ...matriFound, ...savanFound]
+    const allFound = [...prayerFound, ...satsangFound, ...bhadraFound, ...matriFound, ...savanFound];
+    // Filter by type if not "all"
+    const combined = retrieveTypeFilter === "all" ? allFound : allFound.filter(b => b._type === retrieveTypeFilter)
       .sort((a,b) => (a.date||"").localeCompare(b.date||"")); // oldest first (Jan → Feb → Mar)
     if (combined.length === 0) {
       setShareMsg("❌ No bookings found for this mobile number.");
@@ -2239,6 +2242,36 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                 </button>
               </div>
             </div>
+            {/* Booking type filter */}
+            <div>
+              <label className="divine-label">📋 Booking Type</label>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:6 }}>
+                {[
+                  { id:"prayer",  label:"Prayer",  icon:"🙏", color:"#1d4ed8" },
+                  { id:"satsang", label:"Satsang", icon:"🪔", color:"#92400e" },
+                  { id:"bhadra",  label:"Bhadra",  icon:"🌸", color:"#6d28d9" },
+                  { id:"matri",   label:"Matri",   icon:"🌺", color:"#be185d" },
+                  { id:"savan",   label:"Savan",   icon:"🌿", color:"#15803d" },
+                  { id:"all",     label:"All",     icon:"📋", color:"#1e3a8a" },
+                ].map(t => {
+                  const active = retrieveTypeFilter === t.id;
+                  return (
+                    <button key={t.id} type="button"
+                      onClick={() => { setRetrieveTypeFilter(t.id); setShareResults(null); setShareMsg(""); }}
+                      style={{ padding:"8px 4px", borderRadius:10, border:"none", cursor:"pointer",
+                        fontFamily:"'Cinzel',serif", fontSize:10, fontWeight:800,
+                        transition:"all 0.15s",
+                        background: active ? `linear-gradient(135deg,${t.color}dd,${t.color})` : "rgba(239,246,255,0.7)",
+                        color: active ? "#fff" : "rgba(29,78,216,0.5)",
+                        boxShadow: active ? `0 2px 8px ${t.color}44` : "none",
+                        outline: active ? "none" : "1px solid rgba(59,130,246,0.15)" }}>
+                      <div style={{ fontSize:14 }}>{t.icon}</div>
+                      <div>{t.label}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Message */}
@@ -2274,7 +2307,12 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
               </div>
               <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
                 {displayResults.map(b => {
-                  const isSatsang = b._type === "satsang";
+                  const isSatsang = (b._type === "satsang" || b._type === "bhadra" || b._type === "matri" || b._type === "savan");
+                  const typeLabels = { satsang:"🪔 Satsang", bhadra:"🌸 Bhadra Parikrama", matri:"🌺 Matri-Sammelan", savan:"🌿 Savan Parikrama" };
+                  const typeColors = { satsang:"#92400e", bhadra:"#6d28d9", matri:"#be185d", savan:"#15803d" };
+                  const typeBgs   = { satsang:"rgba(217,119,6,0.12)", bhadra:"rgba(109,40,217,0.1)", matri:"rgba(190,24,93,0.1)", savan:"rgba(21,128,61,0.1)" };
+                  const typeBars  = { satsang:"linear-gradient(90deg,#78350f,#d97706,#fbbf24)", bhadra:"linear-gradient(90deg,#5b21b6,#7c3aed,#a78bfa)", matri:"linear-gradient(90deg,#9d174d,#db2777,#f472b6)", savan:"linear-gradient(90deg,#14532d,#16a34a,#4ade80)" };
+                  const typeBgCard= { satsang:"rgba(255,251,235,0.6)", bhadra:"rgba(245,243,255,0.6)", matri:"rgba(253,242,248,0.6)", savan:"rgba(240,253,244,0.6)" };
 
                   /* ── PRAYER CARD ── */
                   if (!isSatsang) {
@@ -2447,23 +2485,25 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                   return (
                     <div key={b.id} style={{ border:"1.5px solid rgba(217,119,6,0.25)",
                       borderRadius:16, overflow:"hidden",
-                      background:"rgba(255,251,235,0.6)" }}>
-                      {/* Amber top bar */}
-                      <div style={{ height:4, background:"linear-gradient(90deg,#78350f,#d97706,#fbbf24)" }}/>
+                      background:typeBgCard[b._type]||"rgba(255,251,235,0.6)" }}>
+                      {/* Type-coloured top bar */}
+                      <div style={{ height:4, background:typeBars[b._type]||"linear-gradient(90deg,#78350f,#d97706,#fbbf24)" }}/>
                       <div style={{ padding:"14px 16px" }}>
-                        {/* Type badge + ID */}
+                        {/* Type badge */}
                         <div style={{ marginBottom:10 }}>
-                          <span style={{ fontSize:10, fontWeight:800, color:"#92400e",
-                            background:"rgba(217,119,6,0.12)", padding:"3px 9px",
-                            borderRadius:20, letterSpacing:"1px", textTransform:"uppercase" }}>
-                            🪔 Satsang Booking
+                          <span style={{ fontSize:10, fontWeight:800,
+                            color:typeColors[b._type]||"#92400e",
+                            background:typeBgs[b._type]||"rgba(217,119,6,0.12)",
+                            padding:"3px 9px", borderRadius:20,
+                            letterSpacing:"1px", textTransform:"uppercase" }}>
+                            {typeLabels[b._type]||"🪔 Satsang"} Booking
                           </span>
                         </div>
                         {/* Details */}
                         <div style={{ fontFamily:"'Cinzel',serif", fontWeight:800,
-                          color:"#78350f", fontSize:14, marginBottom:4 }}>{b.name}</div>
-                        <div style={{ fontSize:13, color:"#d97706", fontWeight:700 }}>
-                          📅 {b.day ? b.day+", " : ""}{formatDate ? formatDate(b.date) : b.date}
+                          color:typeColors[b._type]||"#78350f", fontSize:14, marginBottom:4 }}>{b.name}</div>
+                        <div style={{ fontSize:13, color:typeColors[b._type]||"#d97706", fontWeight:700 }}>
+                          📅 {formatDateWithDay(b.date)}
                         </div>
                         <div style={{ fontSize:12, color:"#6b7280", marginTop:3 }}>
                           ⏰ {cleanTime(b.time)} onwards
@@ -2548,7 +2588,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                     {showRetrievePast && (
                       <div style={{ display:"flex", flexDirection:"column", gap:14, marginTop:12 }}>
                         {pastResults.map(b => {
-                          const isSatsang2 = b._type === "satsang";
+                          const isSatsang2 = (b._type === "satsang" || b._type === "bhadra" || b._type === "matri" || b._type === "savan");
                           if (!isSatsang2) {
                             const sc2 = SLOT_STYLE[b.time] || SLOT_STYLE["Morning"];
                             const placeStr2 = b.place || "";
