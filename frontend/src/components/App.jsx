@@ -241,6 +241,9 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
   // Reset bookMode if current mode is disabled for this SUK
   React.useEffect(() => {
     if (feat && !feat.satsangBooking && bookMode === "satsang") setBookMode("prayer");
+    if (feat && !feat.bhadraBooking  && bookMode === "bhadra")  setBookMode("prayer");
+    if (feat && !feat.matriBooking   && bookMode === "matri")   setBookMode("prayer");
+    if (feat && !feat.savanBooking   && bookMode === "savan")   setBookMode("prayer");
   }, [feat, bookMode]);
 
   // ── Deep-link: auto-navigate to gallery if ?open=gallery in URL ──
@@ -458,9 +461,9 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
       setSatsangBookings(freshSatsang);
       const prayerFound  = freshBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"prayer" }));
       const satsangFound = freshSatsang.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"satsang" }));
-      const bhadraFnd    = bhadraBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"bhadra" }));
-      const matriFnd     = matriBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"matri" }));
-      const savanFnd     = savanBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"savan" }));
+      const bhadraFnd    = feat.bhadraBooking ? bhadraBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"bhadra" })) : [];
+      const matriFnd     = feat.matriBooking  ? matriBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"matri" }))  : [];
+      const savanFnd     = feat.savanBooking  ? savanBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"savan" }))  : [];
       const combined = [...prayerFound, ...satsangFound, ...bhadraFnd, ...matriFnd, ...savanFnd].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
       if (combined.length === 0) {
         setCancelMsg("❌ No bookings found for this mobile number.");
@@ -623,9 +626,9 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
     // Search BOTH prayer and satsang bookings
     const prayerFound   = bookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"prayer" }));
     const satsangFound  = satsangBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"satsang" }));
-    const bhadraFound   = bhadraBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"bhadra" }));
-    const matriFound    = matriBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"matri" }));
-    const savanFound    = savanBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"savan" }));
+    const bhadraFound   = feat.bhadraBooking ? bhadraBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"bhadra" })) : [];
+    const matriFound    = feat.matriBooking  ? matriBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"matri" }))  : [];
+    const savanFound    = feat.savanBooking  ? savanBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"savan" }))  : [];
     const allFound = [...prayerFound, ...satsangFound, ...bhadraFound, ...matriFound, ...savanFound];
     // Filter by type if not "all"
     const combined = retrieveTypeFilter === "all" ? allFound : allFound.filter(b => b._type === retrieveTypeFilter)
@@ -722,7 +725,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
   // fetched the same way as Satsang so duplicate-slot checks and the
   // "already booked" cards work per-event-type.
   const fetchBhadraBookings = React.useCallback(async () => {
-    if (!isConfigured) return;
+    if (!isConfigured || !feat.bhadraBooking) return;
     try {
       const d = await bhadraApi.getAll();
       if (d.success && Array.isArray(d.data)) setBhadraBookings(d.data);
@@ -731,7 +734,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
   }, [isConfigured]);
 
   const fetchMatriBookings = React.useCallback(async () => {
-    if (!isConfigured) return;
+    if (!isConfigured || !feat.matriBooking) return;
     try {
       const d = await matriApi.getAll();
       if (d.success && Array.isArray(d.data)) setMatriBookings(d.data);
@@ -740,7 +743,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
   }, [isConfigured]);
 
   const fetchSavanBookings = React.useCallback(async () => {
-    if (!isConfigured) return;
+    if (!isConfigured || !feat.savanBooking) return;
     try {
       const d = await savanApi.getAll();
       if (d.success && Array.isArray(d.data)) setSavanBookings(d.data);
@@ -1374,7 +1377,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                 <span style={{ fontSize:9, color:"rgba(120,53,15,0.4)", marginLeft:2 }}>›</span>
               </div>
             )}
-            {bhadraBookings.length > 0 && (
+            {feat.bhadraBooking && bhadraBookings.length > 0 && (
               <div onClick={() => { setAllBookingsFilter("bhadra"); setActiveTab("manage"); setManageTab("all"); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
                   background:"rgba(124,58,237,0.07)", border:"1px solid rgba(124,58,237,0.2)",
@@ -1388,7 +1391,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                 <span style={{ fontSize:9, color:"rgba(109,40,217,0.4)", marginLeft:2 }}>›</span>
               </div>
             )}
-            {matriBookings.length > 0 && (
+            {feat.matriBooking && matriBookings.length > 0 && (
               <div onClick={() => { setAllBookingsFilter("matri"); setActiveTab("manage"); setManageTab("all"); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
                   background:"rgba(219,39,119,0.07)", border:"1px solid rgba(219,39,119,0.2)",
@@ -1402,7 +1405,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                 <span style={{ fontSize:9, color:"rgba(190,24,93,0.4)", marginLeft:2 }}>›</span>
               </div>
             )}
-            {savanBookings.length > 0 && (
+            {feat.savanBooking && savanBookings.length > 0 && (
               <div onClick={() => { setAllBookingsFilter("savan"); setActiveTab("manage"); setManageTab("all"); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"5px 12px", borderRadius:20,
                   background:"rgba(22,163,74,0.07)", border:"1px solid rgba(22,163,74,0.2)",
@@ -1467,9 +1470,9 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
             const BOOKING_TYPES = [
               feat.prayerBooking  && { mode:"prayer",   icon:"🙏", label:"Prayer Booking",           color:"#1d4ed8" },
               feat.satsangBooking && { mode:"satsang",  icon:"🪔", label:"Satsang Booking",           color:"#d97706" },
-                                     { mode:"bhadra",   icon:"🌸", label:"Bhadra Parikrama Satsang",  color:"#7c3aed" },
-                                     { mode:"matri",    icon:"🌺", label:"Matri-Sammelan",            color:"#db2777" },
-                                     { mode:"savan",    icon:"🌿", label:"Savan Parikrama",           color:"#16a34a" },
+              feat.bhadraBooking  && { mode:"bhadra",   icon:"🌸", label:"Bhadra Parikrama Satsang",  color:"#7c3aed" },
+              feat.matriBooking   && { mode:"matri",    icon:"🌺", label:"Matri-Sammelan",            color:"#db2777" },
+              feat.savanBooking   && { mode:"savan",    icon:"🌿", label:"Savan Parikrama",           color:"#16a34a" },
             ].filter(Boolean);
             const active = BOOKING_TYPES.find(t => t.mode === bookMode) || BOOKING_TYPES[0];
             return (
@@ -1870,7 +1873,7 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
           )}
 
           {/* ══ BHADRA PARIKRAMA SATSANG / MATRI-SAMMELAN / SAVAN PARIKRAMA — Coming Soon ══ */}
-          {dataReady && (bookMode === "bhadra" || bookMode === "matri" || bookMode === "savan") && (() => {
+          {dataReady && ((bookMode === "bhadra" && feat.bhadraBooking) || (bookMode === "matri" && feat.matriBooking) || (bookMode === "savan" && feat.savanBooking)) && (() => {
             const SPECIAL_INFO = {
               bhadra: { icon:"🌸", label:"Bhadra Parikrama Satsang", color:"#7c3aed", bg:"rgba(124,58,237,0.06)", border:"rgba(124,58,237,0.2)", btnGrad:"linear-gradient(135deg,#5b21b6,#7c3aed,#a78bfa)", shadow:"rgba(124,58,237,0.35)", api:bhadraApi, bookings:bhadraBookings, fetch:fetchBhadraBookings },
               matri:  { icon:"🌺", label:"Matri-Sammelan",           color:"#db2777", bg:"rgba(219,39,119,0.06)", border:"rgba(219,39,119,0.2)", btnGrad:"linear-gradient(135deg,#9d174d,#db2777,#f472b6)", shadow:"rgba(219,39,119,0.35)", api:matriApi,  bookings:matriBookings,  fetch:fetchMatriBookings },
@@ -2284,12 +2287,12 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
               <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:6 }}>
                 {[
                   { id:"prayer",  label:"Prayer",  icon:"🙏", color:"#1d4ed8" },
-                  { id:"satsang", label:"Satsang", icon:"🪔", color:"#92400e" },
-                  { id:"bhadra",  label:"Bhadra",  icon:"🌸", color:"#6d28d9" },
-                  { id:"matri",   label:"Matri",   icon:"🌺", color:"#be185d" },
-                  { id:"savan",   label:"Savan",   icon:"🌿", color:"#15803d" },
+                  feat.satsangBooking && { id:"satsang", label:"Satsang", icon:"🪔", color:"#92400e" },
+                  feat.bhadraBooking  && { id:"bhadra",  label:"Bhadra",  icon:"🌸", color:"#6d28d9" },
+                  feat.matriBooking   && { id:"matri",   label:"Matri",   icon:"🌺", color:"#be185d" },
+                  feat.savanBooking   && { id:"savan",   label:"Savan",   icon:"🌿", color:"#15803d" },
                   { id:"all",     label:"All",     icon:"📋", color:"#1e3a8a" },
-                ].map(t => {
+                ].filter(Boolean).map(t => {
                   const active = retrieveTypeFilter === t.id;
                   return (
                     <button key={t.id} type="button"
@@ -2597,12 +2600,12 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                         <div style={{ marginTop:10 }}>
                           <button
                             disabled={cancelling === b.id}
-                            onClick={() => handleCancelSatsang(b.id)}
+                            onClick={() => handleCancelSpecial(b.id, b._type)}
                             style={{ width:"100%", padding:"10px", border:"1px solid rgba(217,119,6,0.3)",
                               borderRadius:10, background:"rgba(255,251,235,0.9)",
                               color:"#92400e", fontWeight:700, fontSize:12, cursor:"pointer",
                               opacity: cancelling===b.id ? 0.6 : 1 }}>
-                            {cancelling===b.id ? "⏳ Cancelling..." : "❌ Cancel This Satsang"}
+                            {cancelling===b.id ? "⏳ Cancelling..." : `❌ Cancel This ${b._type==='bhadra'?'Bhadra':b._type==='matri'?'Matri':b._type==='savan'?'Savan':'Satsang'}`}
                           </button>
                         </div>
                       </div>
@@ -2746,9 +2749,9 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
           const allItems = [
             ...bookings.map(b        => ({ ...b, _type:"prayer"  })),
             ...satsangBookings.map(b => ({ ...b, _type:"satsang" })),
-            ...bhadraBookings.map(b  => ({ ...b, _type:"bhadra"  })),
-            ...matriBookings.map(b   => ({ ...b, _type:"matri"   })),
-            ...savanBookings.map(b   => ({ ...b, _type:"savan"   })),
+            ...(feat.bhadraBooking ? bhadraBookings.map(b => ({ ...b, _type:"bhadra" })) : []),
+            ...(feat.matriBooking  ? matriBookings.map(b  => ({ ...b, _type:"matri"  })) : []),
+            ...(feat.savanBooking  ? savanBookings.map(b  => ({ ...b, _type:"savan"  })) : []),
           ];
 
           const allMonths = React.useMemo(() => {
@@ -2814,11 +2817,11 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
           const TYPE_TABS = [
             { id:"all",     label:"All",     icon:"📋", color:"#1e3a8a" },
             { id:"prayer",  label:"Prayer",  icon:"🙏", color:"#1d4ed8" },
-            { id:"satsang", label:"Satsang", icon:"🪔", color:"#92400e" },
-            { id:"bhadra",  label:"Bhadra",  icon:"🌸", color:"#6d28d9" },
-            { id:"matri",   label:"Matri",   icon:"🌺", color:"#be185d" },
-            { id:"savan",   label:"Savan",   icon:"🌿", color:"#15803d" },
-          ];
+            feat.satsangBooking && { id:"satsang", label:"Satsang", icon:"🪔", color:"#92400e" },
+            feat.bhadraBooking  && { id:"bhadra",  label:"Bhadra",  icon:"🌸", color:"#6d28d9" },
+            feat.matriBooking   && { id:"matri",   label:"Matri",   icon:"🌺", color:"#be185d" },
+            feat.savanBooking   && { id:"savan",   label:"Savan",   icon:"🌿", color:"#15803d" },
+          ].filter(Boolean);
 
           return (
             <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
