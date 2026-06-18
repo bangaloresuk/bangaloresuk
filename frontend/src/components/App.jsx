@@ -3078,11 +3078,45 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                                         <div style={{ fontSize:12, color:"#374151", fontWeight:600 }}>📱 {b.mobile}</div>
                                         <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🪪 {b.id}</div>
                                         {b.bookedAt && <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🕒 {b.bookedAt}</div>}
+                                        {/* Share invitation */}
+                                        {(() => {
+                                          const placeStr = b.place || "";
+                                          const urlM = placeStr.match(/(https?:\/\/[^\s]+)/);
+                                          const mLink = urlM ? urlM[1] : "";
+                                          const cPlace = mLink ? placeStr.replace(mLink,"").trim() : placeStr;
+                                          const sc2 = { name:b.name, mobile:b.mobile, time:b.time, date:b.date, prayerTime:cleanTime(b.prayerTime), place:cPlace||placeStr, mapsLink:mLink, id:b.id };
+                                          return (
+                                            <div style={{ marginTop:8, display:"flex", flexDirection:"column", gap:5 }}>
+                                              <div style={{ fontSize:10, fontWeight:700, color:"rgba(29,78,216,0.5)", textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:2 }}>📤 Share Invitation</div>
+                                              <a href={`https://wa.me/?text=${buildShareMsg(sc2)}`} target="_blank" rel="noopener noreferrer"
+                                                style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+                                                  padding:"7px", borderRadius:8, textDecoration:"none",
+                                                  background:"linear-gradient(135deg,#25D366,#128C7E)",
+                                                  color:"#fff", fontWeight:700, fontSize:12 }}>
+                                                💬 WhatsApp
+                                              </a>
+                                              <a href={`sms:${b.mobile}?body=${buildShareMsg(sc2)}`}
+                                                style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+                                                  padding:"7px", borderRadius:8, textDecoration:"none",
+                                                  background:"linear-gradient(135deg,#1d4ed8,#3b82f6)",
+                                                  color:"#fff", fontWeight:700, fontSize:12 }}>
+                                                📱 SMS
+                                              </a>
+                                              <button onClick={() => handleCopy(sc2)}
+                                                style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+                                                  padding:"7px", borderRadius:8, border:"none", cursor:"pointer",
+                                                  background:"rgba(29,78,216,0.08)",
+                                                  color:"#1e3a8a", fontWeight:700, fontSize:12 }}>
+                                                📋 Copy
+                                              </button>
+                                            </div>
+                                          );
+                                        })()}
                                         {b.date >= getTodayStr()
                                           ? <button
                                               disabled={cancelling === b.id}
                                               onClick={() => handleCancelBooking(b.id)}
-                                              style={{ marginTop:8, width:"100%", padding:"7px", border:"none", borderRadius:8,
+                                              style={{ marginTop:4, width:"100%", padding:"7px", border:"none", borderRadius:8,
                                                 background:"linear-gradient(135deg,#dc2626,#ef4444)",
                                                 color:"#fff", fontWeight:700, fontSize:12, cursor:"pointer",
                                                 opacity: cancelling===b.id ? 0.6 : 1 }}>
@@ -3149,11 +3183,36 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                                       <div style={{ fontSize:12, color:"#374151", fontWeight:600 }}>📱 {b.mobile}</div>
                                       <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🪪 {b.id}</div>
                                       {b.bookedAt && <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🕒 {b.bookedAt}</div>}
+                                      {/* Share invitation */}
+                                      <div style={{ marginTop:8, display:"flex", flexDirection:"column", gap:5 }}>
+                                        <div style={{ fontSize:10, fontWeight:700, color:tc.adminText, textTransform:"uppercase", letterSpacing:"0.8px", marginBottom:2 }}>📤 Share Invitation</div>
+                                        <a href={`https://wa.me/?text=${buildSatsangShareMsg(b)}`} target="_blank" rel="noopener noreferrer"
+                                          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+                                            padding:"7px", borderRadius:8, textDecoration:"none",
+                                            background:"linear-gradient(135deg,#25D366,#128C7E)",
+                                            color:"#fff", fontWeight:700, fontSize:12 }}>
+                                          💬 WhatsApp
+                                        </a>
+                                        <a href={`sms:?body=${buildSatsangShareMsg(b)}`}
+                                          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+                                            padding:"7px", borderRadius:8, textDecoration:"none",
+                                            background:tc.cancelGrad,
+                                            color:"#fff", fontWeight:700, fontSize:12 }}>
+                                          📱 SMS
+                                        </a>
+                                        <button onClick={() => handleSatsangCopy(b)}
+                                          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:6,
+                                            padding:"7px", borderRadius:8, border:"none", cursor:"pointer",
+                                            background:tc.adminBg,
+                                            color:tc.adminText, fontWeight:700, fontSize:12 }}>
+                                          📋 Copy
+                                        </button>
+                                      </div>
                                       {b.date >= getTodayStr()
                                         ? <button
                                             disabled={cancelling === b.id}
                                             onClick={() => handleCancelSpecial(b.id, b._type)}
-                                            style={{ marginTop:8, width:"100%", padding:"7px", border:"none", borderRadius:8,
+                                            style={{ marginTop:4, width:"100%", padding:"7px", border:"none", borderRadius:8,
                                               background:tc.cancelGrad, color:"#fff", fontWeight:700, fontSize:12, cursor:"pointer",
                                               opacity: cancelling===b.id ? 0.6 : 1 }}>
                                             {cancelling===b.id ? "⏳ Cancelling..." : `🗑️ ${tc.cancelLabel}`}
