@@ -451,19 +451,27 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
     setBookingsReady(false);
     setSatsangReady(false);
     try {
-      const [bd, sd] = await Promise.all([
-        api.getAll(),
-        satsangApi.getAll(),
-      ]);
+      const fetches = [api.getAll(), satsangApi.getAll()];
+      if (feat.bhadraBooking) fetches.push(bhadraApi.getAll());
+      if (feat.matriBooking)  fetches.push(matriApi.getAll());
+      if (feat.savanBooking)  fetches.push(savanApi.getAll());
+      const results = await Promise.all(fetches);
+      const [bd, sd] = results;
       const freshBookings = (bd && bd.success && Array.isArray(bd.data)) ? bd.data : [];
       const freshSatsang  = (sd && sd.success && Array.isArray(sd.data)) ? sd.data : [];
+      const freshBhadra   = feat.bhadraBooking && results[2] ? ((results[2].success && Array.isArray(results[2].data)) ? results[2].data : []) : [];
+      const freshMatri    = feat.matriBooking  && results[feat.bhadraBooking?3:2] ? ((results[feat.bhadraBooking?3:2].success && Array.isArray(results[feat.bhadraBooking?3:2].data)) ? results[feat.bhadraBooking?3:2].data : []) : [];
+      const freshSavan    = feat.savanBooking  && results[results.length-1] ? ((results[results.length-1].success && Array.isArray(results[results.length-1].data)) ? results[results.length-1].data : []) : [];
       setBookings(freshBookings);
       setSatsangBookings(freshSatsang);
+      if (freshBhadra.length) setBhadraBookings(freshBhadra);
+      if (freshMatri.length)  setMatriBookings(freshMatri);
+      if (freshSavan.length)  setSavanBookings(freshSavan);
       const prayerFound  = freshBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"prayer" }));
       const satsangFound = freshSatsang.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"satsang" }));
-      const bhadraFnd    = feat.bhadraBooking ? bhadraBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"bhadra" })) : [];
-      const matriFnd     = feat.matriBooking  ? matriBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"matri" }))  : [];
-      const savanFnd     = feat.savanBooking  ? savanBookings.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"savan" }))  : [];
+      const bhadraFnd    = freshBhadra.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"bhadra" }));
+      const matriFnd     = freshMatri.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"matri" }));
+      const savanFnd     = freshSavan.filter(b => b.mobile === mob).map(b => ({ ...b, _type:"savan" }));
       const combined = [...prayerFound, ...satsangFound, ...bhadraFnd, ...matriFnd, ...savanFnd].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
       if (combined.length === 0) {
         setCancelMsg("❌ No bookings found for this mobile number.");
@@ -2114,27 +2122,33 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                   return (
                   <div style={{ marginTop:12, display:"flex", flexDirection:"column", gap:8 }}>
                     {futureCancelResults.map(b => {
-                      const isSatsang = b._type === "satsang";
-                      if (isSatsang) {
+                      const isPrayer = b._type === "prayer" || !b._type;
+                      const TC2 = {
+                        satsang:{ badge:"🪔 Satsang",  bg:"#fffbeb",               border:"rgba(217,119,6,0.25)",  name:"#78350f", time:"#d97706", grad:"linear-gradient(135deg,#92400e,#d97706)",  label:"Cancel Satsang"  },
+                        bhadra: { badge:"🌸 Bhadra",   bg:"rgba(245,243,255,0.9)", border:"rgba(109,40,217,0.25)", name:"#4c1d95", time:"#7c3aed", grad:"linear-gradient(135deg,#5b21b6,#7c3aed)",  label:"Cancel Bhadra"   },
+                        matri:  { badge:"🌺 Matri",    bg:"rgba(253,242,248,0.9)", border:"rgba(190,24,93,0.25)",  name:"#831843", time:"#db2777", grad:"linear-gradient(135deg,#9d174d,#db2777)",  label:"Cancel Matri"    },
+                        savan:  { badge:"🌿 Savan",    bg:"rgba(240,253,244,0.9)", border:"rgba(21,128,61,0.25)",  name:"#14532d", time:"#16a34a", grad:"linear-gradient(135deg,#14532d,#16a34a)",  label:"Cancel Savan"    },
+                      };
+                      if (!isPrayer) {
+                        const tc2 = TC2[b._type] || TC2.satsang;
                         return (
-                          <div key={b.id} style={{ background:"#fffbeb", borderRadius:12,
-                            padding:"14px", border:"1px solid rgba(217,119,6,0.25)" }}>
+                          <div key={b.id} style={{ background:tc2.bg, borderRadius:12,
+                            padding:"14px", border:`1px solid ${tc2.border}` }}>
                             <div style={{ marginBottom:2 }}>
-                              <span style={{ fontSize:10, fontWeight:800, color:"#92400e",
-                                background:"rgba(217,119,6,0.12)", padding:"2px 7px",
-                                borderRadius:10, textTransform:"uppercase", letterSpacing:"0.5px" }}>🪔 Satsang</span>
+                              <span style={{ fontSize:10, fontWeight:800, color:tc2.time,
+                                background:`${tc2.border}`, padding:"2px 7px",
+                                borderRadius:10, textTransform:"uppercase", letterSpacing:"0.5px" }}>{tc2.badge}</span>
                             </div>
-                            <div style={{ fontFamily:"'Cinzel',serif", fontWeight:800, color:"#78350f", fontSize:13 }}>{b.name}</div>
-                            <div style={{ fontSize:12, color:"#d97706", fontWeight:700, marginTop:2 }}>
+                            <div style={{ fontFamily:"'Cinzel',serif", fontWeight:800, color:tc2.name, fontSize:13 }}>{b.name}</div>
+                            <div style={{ fontSize:12, color:tc2.time, fontWeight:700, marginTop:2 }}>
                               📅 {formatDateWithDay(b.date)} · ⏰ {cleanTime(b.time)}
                             </div>
                             {b.venue && <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>📍 {b.venue}</div>}
-                            <button disabled={cancelling === b.id} onClick={() => handleCancelSatsang(b.id)}
+                            <button disabled={cancelling === b.id} onClick={() => handleCancelSpecial(b.id, b._type)}
                               style={{ marginTop:10, width:"100%", padding:"9px", border:"none", borderRadius:9,
-                                background:"linear-gradient(135deg,#92400e,#d97706)",
-                                color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer",
+                                background:tc2.grad, color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer",
                                 opacity:cancelling === b.id ? 0.6 : 1 }}>
-                              {cancelling === b.id ? "⏳ Cancelling..." : "🗑️  Cancel This Satsang"}
+                              {cancelling === b.id ? "⏳ Cancelling..." : `🗑️ ${tc2.label}`}
                             </button>
                           </div>
                         );
@@ -2153,13 +2167,9 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                             {c.icon} {b.time} Prayer · {formatDateWithDay(b.date)}
                           </div>
                           {b.prayerTime && <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🕐 {cleanTime(b.prayerTime)}</div>}
-                          <button disabled={cancelling === b.id} onClick={() => handleCancelBooking(b.id)}
-                            style={{ marginTop:10, width:"100%", padding:"9px", border:"none", borderRadius:9,
-                              background:"linear-gradient(135deg,#dc2626,#ef4444)",
-                              color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer",
-                              opacity:cancelling === b.id ? 0.6 : 1 }}>
-                            {cancelling === b.id ? "⏳ Cancelling..." : "🗑️  Cancel This Booking"}
-                          </button>
+                          <div style={{ marginTop:8, fontSize:11, color:"#94a3b8", fontStyle:"italic", textAlign:"center" }}>
+                            ✅ This prayer has already passed
+                          </div>
                         </div>
                       );
                     })}
@@ -2177,52 +2187,51 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                         {showCancelPast && (
                           <div style={{ display:"flex", flexDirection:"column", gap:8, marginTop:8, opacity:0.75 }}>
                             {pastCancelResults.map(b => {
-                      const isSatsang = b._type === "satsang";
-                      if (isSatsang) {
+                      const isPrayer2 = b._type === "prayer" || !b._type;
+                      const TC3 = {
+                        satsang:{ badge:"🪔 Satsang", bg:"#fffbeb",               border:"rgba(217,119,6,0.25)",  name:"#78350f", time:"#d97706" },
+                        bhadra: { badge:"🌸 Bhadra",  bg:"rgba(245,243,255,0.9)", border:"rgba(109,40,217,0.25)", name:"#4c1d95", time:"#7c3aed" },
+                        matri:  { badge:"🌺 Matri",   bg:"rgba(253,242,248,0.9)", border:"rgba(190,24,93,0.25)",  name:"#831843", time:"#db2777" },
+                        savan:  { badge:"🌿 Savan",   bg:"rgba(240,253,244,0.9)", border:"rgba(21,128,61,0.25)",  name:"#14532d", time:"#16a34a" },
+                      };
+                      if (!isPrayer2) {
+                        const tc3 = TC3[b._type] || TC3.satsang;
                         return (
-                          <div key={b.id} style={{ background:"#fffbeb", borderRadius:12,
-                            padding:"14px", border:"1px solid rgba(217,119,6,0.25)" }}>
+                          <div key={b.id} style={{ background:tc3.bg, borderRadius:12,
+                            padding:"14px", border:`1px solid ${tc3.border}`, opacity:0.75 }}>
                             <div style={{ marginBottom:2 }}>
-                              <span style={{ fontSize:10, fontWeight:800, color:"#92400e",
-                                background:"rgba(217,119,6,0.12)", padding:"2px 7px",
-                                borderRadius:10, textTransform:"uppercase", letterSpacing:"0.5px" }}>🪔 Satsang</span>
+                              <span style={{ fontSize:10, fontWeight:800, color:tc3.time,
+                                background:tc3.border, padding:"2px 7px",
+                                borderRadius:10, textTransform:"uppercase", letterSpacing:"0.5px" }}>{tc3.badge}</span>
                             </div>
-                            <div style={{ fontFamily:"'Cinzel',serif", fontWeight:800, color:"#78350f", fontSize:13 }}>{b.name}</div>
-                            <div style={{ fontSize:12, color:"#d97706", fontWeight:700, marginTop:2 }}>
+                            <div style={{ fontFamily:"'Cinzel',serif", fontWeight:800, color:tc3.name, fontSize:13 }}>{b.name}</div>
+                            <div style={{ fontSize:12, color:tc3.time, fontWeight:700, marginTop:2 }}>
                               📅 {formatDateWithDay(b.date)} · ⏰ {cleanTime(b.time)}
                             </div>
                             {b.venue && <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>📍 {b.venue}</div>}
-                            <button disabled={cancelling === b.id} onClick={() => handleCancelSatsang(b.id)}
-                              style={{ marginTop:10, width:"100%", padding:"9px", border:"none", borderRadius:9,
-                                background:"linear-gradient(135deg,#92400e,#d97706)",
-                                color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer",
-                                opacity:cancelling === b.id ? 0.6 : 1 }}>
-                              {cancelling === b.id ? "⏳ Cancelling..." : "🗑️  Cancel This Satsang"}
-                            </button>
+                            <div style={{ marginTop:8, fontSize:11, color:"#6b7280", fontStyle:"italic" }}>
+                              ✅ This event has already passed
+                            </div>
                           </div>
                         );
                       }
                       const c = SLOT_STYLE[b.time] || SLOT_STYLE["Morning"];
                       return (
-                        <div key={b.id} style={{ background:"#fff", borderRadius:12,
-                          padding:"14px", border:"1px solid rgba(220,38,38,0.2)" }}>
+                        <div key={b.id} style={{ background:"#f8fafc", borderRadius:12,
+                          padding:"14px", border:"1px solid rgba(148,163,184,0.3)", opacity:0.75 }}>
                           <div style={{ marginBottom:2 }}>
-                            <span style={{ fontSize:10, fontWeight:800, color:"#1d4ed8",
-                              background:"rgba(29,78,216,0.08)", padding:"2px 7px",
-                              borderRadius:10, textTransform:"uppercase", letterSpacing:"0.5px" }}>🙏 Prayer</span>
+                            <span style={{ fontSize:10, fontWeight:800, color:"#64748b",
+                              background:"rgba(100,116,139,0.1)", padding:"2px 7px",
+                              borderRadius:10, textTransform:"uppercase", letterSpacing:"0.5px" }}>🙏 Prayer (Past)</span>
                           </div>
-                          <div style={{ fontFamily:"'Cinzel',serif", fontWeight:800, color:"#1e3a8a", fontSize:13 }}>{b.name}</div>
-                          <div style={{ fontSize:12, color:c.color, fontWeight:700, marginTop:2 }}>
+                          <div style={{ fontFamily:"'Cinzel',serif", fontWeight:800, color:"#475569", fontSize:13 }}>{b.name}</div>
+                          <div style={{ fontSize:12, color:"#64748b", fontWeight:700, marginTop:2 }}>
                             {c.icon} {b.time} Prayer · {formatDateWithDay(b.date)}
                           </div>
-                          {b.prayerTime && <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🕐 {cleanTime(b.prayerTime)}</div>}
-                          <button disabled={cancelling === b.id} onClick={() => handleCancelBooking(b.id)}
-                            style={{ marginTop:10, width:"100%", padding:"9px", border:"none", borderRadius:9,
-                              background:"linear-gradient(135deg,#dc2626,#ef4444)",
-                              color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer",
-                              opacity:cancelling === b.id ? 0.6 : 1 }}>
-                            {cancelling === b.id ? "⏳ Cancelling..." : "🗑️  Cancel This Booking"}
-                          </button>
+                          {b.prayerTime && <div style={{ fontSize:11, color:"#94a3b8", marginTop:2 }}>🕐 {cleanTime(b.prayerTime)}</div>}
+                          <div style={{ marginTop:8, fontSize:11, color:"#94a3b8", fontStyle:"italic" }}>
+                            ✅ This prayer has already passed
+                          </div>
                         </div>
                       );
                             })}
@@ -2502,18 +2511,25 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                             </button>
                           </div>
 
-                          {/* Cancel prayer */}
-                          <div style={{ marginTop:10 }}>
-                            <button
-                              disabled={cancelling === b.id}
-                              onClick={() => handleCancelBooking(b.id)}
-                              style={{ width:"100%", padding:"10px", border:"1px solid rgba(220,38,38,0.3)",
-                                borderRadius:10, background:"rgba(254,242,242,0.8)",
-                                color:"#b91c1c", fontWeight:700, fontSize:12, cursor:"pointer",
-                                opacity: cancelling===b.id ? 0.6 : 1 }}>
-                              {cancelling===b.id ? "⏳ Cancelling..." : "❌ Cancel This Booking"}
-                            </button>
-                          </div>
+                          {/* Cancel prayer — only for future dates */}
+                          {b.date >= getTodayStr() && (
+                            <div style={{ marginTop:10 }}>
+                              <button
+                                disabled={cancelling === b.id}
+                                onClick={() => handleCancelBooking(b.id)}
+                                style={{ width:"100%", padding:"10px", border:"1px solid rgba(220,38,38,0.3)",
+                                  borderRadius:10, background:"rgba(254,242,242,0.8)",
+                                  color:"#b91c1c", fontWeight:700, fontSize:12, cursor:"pointer",
+                                  opacity: cancelling===b.id ? 0.6 : 1 }}>
+                                {cancelling===b.id ? "⏳ Cancelling..." : "❌ Cancel This Booking"}
+                              </button>
+                            </div>
+                          )}
+                          {b.date < getTodayStr() && (
+                            <div style={{ marginTop:8, fontSize:11, color:"#94a3b8", fontStyle:"italic", textAlign:"center" }}>
+                              ✅ This prayer has already passed
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -2596,18 +2612,25 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                           </button>
                         </div>
 
-                        {/* Cancel satsang */}
-                        <div style={{ marginTop:10 }}>
-                          <button
-                            disabled={cancelling === b.id}
-                            onClick={() => handleCancelSpecial(b.id, b._type)}
-                            style={{ width:"100%", padding:"10px", border:"1px solid rgba(217,119,6,0.3)",
-                              borderRadius:10, background:"rgba(255,251,235,0.9)",
-                              color:"#92400e", fontWeight:700, fontSize:12, cursor:"pointer",
-                              opacity: cancelling===b.id ? 0.6 : 1 }}>
-                            {cancelling===b.id ? "⏳ Cancelling..." : `❌ Cancel This ${b._type==='bhadra'?'Bhadra':b._type==='matri'?'Matri':b._type==='savan'?'Savan':'Satsang'}`}
-                          </button>
-                        </div>
+                        {/* Cancel satsang/special — only for future dates */}
+                        {b.date >= getTodayStr() && (
+                          <div style={{ marginTop:10 }}>
+                            <button
+                              disabled={cancelling === b.id}
+                              onClick={() => handleCancelSpecial(b.id, b._type)}
+                              style={{ width:"100%", padding:"10px", border:`1px solid ${typeColors[b._type]||"#92400e"}44`,
+                                borderRadius:10, background:`${typeBgCard[b._type]||"rgba(255,251,235,0.9)"}`,
+                                color:typeColors[b._type]||"#92400e", fontWeight:700, fontSize:12, cursor:"pointer",
+                                opacity: cancelling===b.id ? 0.6 : 1 }}>
+                              {cancelling===b.id ? "⏳ Cancelling..." : `❌ Cancel This ${b._type==='bhadra'?'Bhadra':b._type==='matri'?'Matri':b._type==='savan'?'Savan':'Satsang'}`}
+                            </button>
+                          </div>
+                        )}
+                        {b.date < getTodayStr() && (
+                          <div style={{ marginTop:8, fontSize:11, color:"#94a3b8", fontStyle:"italic", textAlign:"center" }}>
+                            ✅ This event has already passed
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -2676,31 +2699,35 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                               background:"rgba(250,247,235,0.7)" }}>
                               <div style={{ height:4, background:"linear-gradient(90deg,#94a3b8,#cbd5e1,#e2e8f0)" }}/>
                               <div style={{ padding:"14px 16px" }}>
-                                <div style={{ marginBottom:8 }}>
-                                  <span style={{ fontSize:10, fontWeight:800, color:"#92400e",
-                                    background:"rgba(217,119,6,0.1)", padding:"3px 9px",
-                                    borderRadius:20, letterSpacing:"1px", textTransform:"uppercase" }}>
-                                    🪔 Satsang · Past
-                                  </span>
-                                </div>
-                                <div style={{ fontFamily:"'Cinzel',serif", fontWeight:800,
-                                  color:"#78350f", fontSize:14, marginBottom:4 }}>{b.name}</div>
-                                <div style={{ fontSize:13, color:"#d97706", fontWeight:700, opacity:0.8 }}>
-                                  📅 {formatDateWithDay(b.date)}
-                                </div>
-                                <div style={{ fontSize:12, color:"#6b7280", marginTop:3 }}>
-                                  ⏰ {cleanTime(b.time)} onwards
-                                  {b.venue && ` · 📍 ${b.venue}`}
-                                </div>
-                                <div style={{ marginTop:10 }}>
-                                  <button disabled={cancelling === b.id} onClick={() => handleCancelSatsang(b.id)}
-                                    style={{ width:"100%", padding:"10px", border:"1px solid rgba(217,119,6,0.3)",
-                                      borderRadius:10, background:"rgba(255,251,235,0.9)",
-                                      color:"#92400e", fontWeight:700, fontSize:12, cursor:"pointer",
-                                      opacity: cancelling===b.id ? 0.6 : 1 }}>
-                                    {cancelling===b.id ? "⏳ Cancelling..." : "❌ Cancel This Satsang"}
-                                  </button>
-                                </div>
+                                {(() => {
+                                  const ptl = { satsang:"🪔 Satsang", bhadra:"🌸 Bhadra", matri:"🌺 Matri", savan:"🌿 Savan" };
+                                  const ptc = { satsang:"#92400e", bhadra:"#6d28d9", matri:"#be185d", savan:"#15803d" };
+                                  const ptb = { satsang:"rgba(217,119,6,0.1)", bhadra:"rgba(109,40,217,0.1)", matri:"rgba(190,24,93,0.1)", savan:"rgba(21,128,61,0.1)" };
+                                  const lbl = ptl[b._type] || "🪔 Satsang";
+                                  const clr = ptc[b._type] || "#92400e";
+                                  const bg  = ptb[b._type] || "rgba(217,119,6,0.1)";
+                                  return (<>
+                                    <div style={{ marginBottom:8 }}>
+                                      <span style={{ fontSize:10, fontWeight:800, color:clr,
+                                        background:bg, padding:"3px 9px",
+                                        borderRadius:20, letterSpacing:"1px", textTransform:"uppercase" }}>
+                                        {lbl} · Past
+                                      </span>
+                                    </div>
+                                    <div style={{ fontFamily:"'Cinzel',serif", fontWeight:800,
+                                      color:clr, fontSize:14, marginBottom:4 }}>{b.name}</div>
+                                    <div style={{ fontSize:13, color:clr, fontWeight:700, opacity:0.8 }}>
+                                      📅 {formatDateWithDay(b.date)}
+                                    </div>
+                                    <div style={{ fontSize:12, color:"#6b7280", marginTop:3 }}>
+                                      ⏰ {cleanTime(b.time)} onwards
+                                      {b.venue && ` · 📍 ${b.venue}`}
+                                    </div>
+                                    <div style={{ marginTop:8, fontSize:11, color:"#94a3b8", fontStyle:"italic", textAlign:"center" }}>
+                                      ✅ This event has already passed
+                                    </div>
+                                  </>);
+                                })()}
                               </div>
                             </div>
                           );
@@ -3051,15 +3078,20 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                                         <div style={{ fontSize:12, color:"#374151", fontWeight:600 }}>📱 {b.mobile}</div>
                                         <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🪪 {b.id}</div>
                                         {b.bookedAt && <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🕒 {b.bookedAt}</div>}
-                                        <button
-                                          disabled={cancelling === b.id}
-                                          onClick={() => handleCancelBooking(b.id)}
-                                          style={{ marginTop:8, width:"100%", padding:"7px", border:"none", borderRadius:8,
-                                            background:"linear-gradient(135deg,#dc2626,#ef4444)",
-                                            color:"#fff", fontWeight:700, fontSize:12, cursor:"pointer",
-                                            opacity: cancelling===b.id ? 0.6 : 1 }}>
-                                          {cancelling===b.id ? "⏳ Cancelling..." : "🗑️ Cancel Booking"}
-                                        </button>
+                                        {b.date >= getTodayStr()
+                                          ? <button
+                                              disabled={cancelling === b.id}
+                                              onClick={() => handleCancelBooking(b.id)}
+                                              style={{ marginTop:8, width:"100%", padding:"7px", border:"none", borderRadius:8,
+                                                background:"linear-gradient(135deg,#dc2626,#ef4444)",
+                                                color:"#fff", fontWeight:700, fontSize:12, cursor:"pointer",
+                                                opacity: cancelling===b.id ? 0.6 : 1 }}>
+                                              {cancelling===b.id ? "⏳ Cancelling..." : "🗑️ Cancel Booking"}
+                                            </button>
+                                          : <div style={{ marginTop:6, fontSize:11, color:"#94a3b8", fontStyle:"italic", textAlign:"center" }}>
+                                              ✅ Prayer already passed
+                                            </div>
+                                        }
                                       </div>
                                     )}
                                   </div>
@@ -3117,15 +3149,19 @@ function App({ onChangeSuk, deepLink = {}, currentUser = null, onSignOut, onRequ
                                       <div style={{ fontSize:12, color:"#374151", fontWeight:600 }}>📱 {b.mobile}</div>
                                       <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🪪 {b.id}</div>
                                       {b.bookedAt && <div style={{ fontSize:11, color:"#6b7280", marginTop:2 }}>🕒 {b.bookedAt}</div>}
-                                      <button
-                                        disabled={cancelling === b.id}
-                                        onClick={() => handleCancelSpecial(b.id, b._type)}
-                                        style={{ marginTop:8, width:"100%", padding:"7px", border:"none", borderRadius:8,
-                                          background:tc.cancelGrad,
-                                          color:"#fff", fontWeight:700, fontSize:12, cursor:"pointer",
-                                          opacity: cancelling===b.id ? 0.6 : 1 }}>
-                                        {cancelling===b.id ? "⏳ Cancelling..." : `🗑️ ${tc.cancelLabel}`}
-                                      </button>
+                                      {b.date >= getTodayStr()
+                                        ? <button
+                                            disabled={cancelling === b.id}
+                                            onClick={() => handleCancelSpecial(b.id, b._type)}
+                                            style={{ marginTop:8, width:"100%", padding:"7px", border:"none", borderRadius:8,
+                                              background:tc.cancelGrad, color:"#fff", fontWeight:700, fontSize:12, cursor:"pointer",
+                                              opacity: cancelling===b.id ? 0.6 : 1 }}>
+                                            {cancelling===b.id ? "⏳ Cancelling..." : `🗑️ ${tc.cancelLabel}`}
+                                          </button>
+                                        : <div style={{ marginTop:6, fontSize:11, color:"#94a3b8", fontStyle:"italic", textAlign:"center" }}>
+                                            ✅ Event already passed
+                                          </div>
+                                      }
                                     </div>
                                   )}
                                 </div>
