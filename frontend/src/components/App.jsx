@@ -238,7 +238,7 @@ export default function App({ onChangeSuk, deepLink = {}, currentUser = null, on
 
       {/* ── HEADER ── */}
       <div style={{ textAlign:'center', marginBottom:4 }}>
-        <div style={{ display:'flex', justifyContent:'flex-end', marginBottom:8 }}>
+        <div style={{ display:'flex', justifyContent:'flex-start', marginBottom:8 }}>
           <button onClick={() => setDrawerOpen(true)}
             style={{ width:40, height:40, borderRadius:12, border:'none',
               background:'linear-gradient(135deg,rgba(29,78,216,0.1),rgba(59,130,246,0.07))',

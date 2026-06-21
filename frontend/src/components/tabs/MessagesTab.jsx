@@ -2,6 +2,7 @@
 //  MessagesTab — craft satsang invitations & custom messages
 // ============================================================
 import React from 'react'
+import { LocationPicker } from '../shared/LocationPicker.jsx'
 
 export default function MessagesTab({
   msgType, setMsgType,
@@ -91,6 +92,17 @@ function SatsangInviteForm({ satsang, setSatsang, buildSatsangMsg, shareWhatsApp
               onChange={e => setSatsang({...satsang, [key]:e.target.value})}/>
           </div>
         ))}
+
+        <div>
+          <label className="divine-label">🌐 Find Venue Location</label>
+          <LocationPicker color="#1d4ed8"
+            placeholder="Search venue — area, landmark, address…"
+            onPick={({ address, mapsLink }) => setSatsang(prev => ({
+              ...prev,
+              venue:    address  || prev.venue,
+              mapsLink: mapsLink || prev.mapsLink,
+            }))}/>
+        </div>
 
         {builtMsg ? (
           <ShareSection msg={builtMsg} shareWhatsApp={shareWhatsApp} shareSMS={shareSMS} shareCopy={shareCopy}/>

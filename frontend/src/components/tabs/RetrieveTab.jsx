@@ -4,6 +4,7 @@
 import React from 'react'
 import { SLOT_STYLE } from '../../config/prayerTimes.js'
 import { getTodayStr, formatDateWithDay, formatDate, getDayName, cleanTime, maskMobile } from '../../utils/utils.js'
+import { LocationPicker } from '../shared/LocationPicker.jsx'
 
 const TYPE_LABELS  = { satsang:'🪔 Satsang', bhadra:'🌸 Bhadra Parikrama', matri:'🌺 Matri-Sammelan', savan:'🌿 Savan Parikrama' }
 const TYPE_COLORS  = { satsang:'#92400e', bhadra:'#6d28d9', matri:'#be185d', savan:'#15803d' }
@@ -250,7 +251,16 @@ function BookingResultCard({ b, cancelling, handleCancelBooking, handleCancelSat
 
             {/* Address edit (prayer only) */}
             {editingAddress === b.id ? (
-              <div style={{ marginTop:10, display:'flex', flexDirection:'column', gap:6 }}>
+              <div style={{ marginTop:10, display:'flex', flexDirection:'column', gap:8 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'rgba(29,78,216,0.6)', textTransform:'uppercase', letterSpacing:'0.8px' }}>
+                  🌐 Find Location
+                </div>
+                <LocationPicker color="#1d4ed8"
+                  placeholder="Search area, landmark, address…"
+                  onPick={({ address, mapsLink }) => {
+                    if (address)  setEditAddressVal(address)
+                    if (mapsLink) setEditMapsVal(mapsLink)
+                  }}/>
                 <input className="divine-input" placeholder="Address / location name" value={editAddressVal}
                   onChange={e => setEditAddressVal(e.target.value)} style={{ fontSize:12 }}/>
                 <input className="divine-input" placeholder="Google Maps link (optional)" value={editMapsVal}
