@@ -358,6 +358,10 @@ function PrayerForm({ form, setForm, error, shake, submitting, isSlotTaken, getS
 //  SatsangForm
 // ─────────────────────────────────────────────────────────────
 function SatsangForm({ satsangForm, setSatsangForm, satsangError, setSatsangError, satsangShake, satsangSubmitting, handleSatsangSubmit, satsangBookings }) {
+  const existingForType = satsangBookings || []
+  const isDupSatsang = (date, time) => existingForType.some(b => b.date === date && b.time.trim().toLowerCase() === time.trim().toLowerCase())
+  const dupBooker = (date, time) => existingForType.find(b => b.date === date && b.time.trim().toLowerCase() === time.trim().toLowerCase())
+
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:13 }}>
       <div style={{ textAlign:'center', marginBottom:4 }}>
@@ -366,6 +370,33 @@ function SatsangForm({ satsangForm, setSatsangForm, satsangError, setSatsangErro
         </div>
         <div style={{ height:1, background:'linear-gradient(90deg,transparent,rgba(217,119,6,0.5),transparent)', marginTop:10 }}/>
       </div>
+
+      {existingForType.length > 0 && (
+        <div>
+          <div style={{ fontSize:11, fontWeight:700, color:'#92400e', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>
+            🪔 {existingForType.length} slot{existingForType.length!==1?'s':''} already booked
+          </div>
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
+            {[...existingForType].sort((a,b)=>a.date.localeCompare(b.date)).map(b => {
+              const dd     = (b.date||'').slice(8,10)
+              const dayIdx = b.date ? new Date(b.date+'T00:00:00').getDay() : -1
+              const dayN   = dayIdx>=0?['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dayIdx]:''
+              return (
+                <div key={b.id} style={{ display:'flex', flexDirection:'column', alignItems:'center',
+                  padding:'7px 10px', borderRadius:12, minWidth:52,
+                  background:'rgba(217,119,6,0.06)', border:'2px solid rgba(217,119,6,0.2)' }}>
+                  <div style={{ fontSize:9, fontWeight:700, color:'rgba(120,53,15,0.6)', textTransform:'uppercase', letterSpacing:'0.4px' }}>{dayN}</div>
+                  <div style={{ fontSize:15, fontWeight:900, color:'#92400e', lineHeight:1.2 }}>{dd}</div>
+                  <div style={{ fontSize:8, fontWeight:800, color:'#92400e', marginTop:2, textAlign:'center', maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{b.time||'—'}</div>
+                  <div style={{ fontSize:8, color:'rgba(120,53,15,0.55)', marginTop:1, maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{(b.name||'').split(' ')[0]}</div>
+                  <div style={{ width:6, height:6, borderRadius:'50%', background:'#92400e', marginTop:4 }}/>
+                </div>
+              )
+            })}
+          </div>
+          <div style={{ height:1, background:'rgba(217,119,6,0.13)', margin:'8px 0' }}/>
+        </div>
+      )}
 
       {satsangError && (
         <div className={satsangShake?'shake':''} style={{ padding:'11px 14px', borderRadius:10,
@@ -386,6 +417,12 @@ function SatsangForm({ satsangForm, setSatsangForm, satsangError, setSatsangErro
             value={satsangForm[key]}
             style={{ borderColor:'rgba(217,119,6,0.3)' }}
             onChange={e => { setSatsangError(''); setSatsangForm({...satsangForm, [key]: key==='mobile' ? e.target.value.replace(/[^0-9]/g,'') : e.target.value }) }}/>
+          {key === 'time' && satsangForm.date && satsangForm.time && isDupSatsang(satsangForm.date, satsangForm.time) && (
+            <div style={{ marginTop:5, padding:'8px 12px', borderRadius:8, fontSize:12,
+              background:'#fee2e2', border:'1px solid #fca5a5', color:'#b91c1c', fontWeight:600 }}>
+              ⚠️ This date & time is already booked by {dupBooker(satsangForm.date, satsangForm.time)?.name || 'someone'}. Please choose a different time.
+            </div>
+          )}
         </div>
       ))}
 
@@ -451,13 +488,14 @@ function SatsangForm({ satsangForm, setSatsangForm, satsangError, setSatsangErro
       ))}
 
       <div style={{ marginTop:8 }}>
-        <button onClick={handleSatsangSubmit} disabled={satsangSubmitting}
+        <button onClick={handleSatsangSubmit}
+          disabled={satsangSubmitting || (satsangForm.date && satsangForm.time && isDupSatsang(satsangForm.date, satsangForm.time))}
           style={{ width:'100%', padding:'15px', border:'none', borderRadius:13,
             background:'linear-gradient(135deg,#78350f 0%,#d97706 50%,#fbbf24 100%)',
             color:'#fff', fontWeight:900, fontSize:16, cursor:'pointer',
             fontFamily:"'Cinzel',serif", letterSpacing:'0.5px',
             boxShadow:'0 5px 22px rgba(120,53,15,0.35)',
-            opacity:satsangSubmitting?0.7:1, transition:'all 0.3s' }}>
+            opacity:(satsangSubmitting || (satsangForm.date && satsangForm.time && isDupSatsang(satsangForm.date, satsangForm.time)))?0.6:1, transition:'all 0.3s' }}>
           {satsangSubmitting ? '⏳ Booking...' : '🪔  Book This Satsang'}
         </button>
       </div>
@@ -470,7 +508,8 @@ function SatsangForm({ satsangForm, setSatsangForm, satsangError, setSatsangErro
 // ─────────────────────────────────────────────────────────────
 function SpecialEventForm({ bookMode, info: t, satsangForm, setSatsangForm, satsangError, setSatsangError, satsangShake, satsangSubmitting, handleSpecialSubmit }) {
   const existingForType = t.bookings || []
-  const isDupSpecial = (date, time) => existingForType.some(b => b.date === date && b.time.trim() === time.trim())
+  const isDupSpecial = (date, time) => existingForType.some(b => b.date === date && b.time.trim().toLowerCase() === time.trim().toLowerCase())
+  const dupBookerSpecial = (date, time) => existingForType.find(b => b.date === date && b.time.trim().toLowerCase() === time.trim().toLowerCase())
 
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
@@ -530,7 +569,7 @@ function SpecialEventForm({ bookMode, info: t, satsangForm, setSatsangForm, sats
           {key === 'time' && satsangForm.date && satsangForm.time && isDupSpecial(satsangForm.date, satsangForm.time) && (
             <div style={{ marginTop:5, padding:'8px 12px', borderRadius:8, fontSize:12,
               background:'#fee2e2', border:'1px solid #fca5a5', color:'#b91c1c', fontWeight:600 }}>
-              ⚠️ This date & time is already booked for {t.label}. Please choose a different slot.
+              ⚠️ This date & time is already booked by {dupBookerSpecial(satsangForm.date, satsangForm.time)?.name || 'someone'} for {t.label}. Please choose a different time.
             </div>
           )}
         </div>
@@ -593,12 +632,13 @@ function SpecialEventForm({ bookMode, info: t, satsangForm, setSatsangForm, sats
       ))}
 
       <div style={{ marginTop:8 }}>
-        <button onClick={handleSpecialSubmit} disabled={satsangSubmitting}
+        <button onClick={handleSpecialSubmit}
+          disabled={satsangSubmitting || (satsangForm.date && satsangForm.time && isDupSpecial(satsangForm.date, satsangForm.time))}
           style={{ width:'100%', padding:'15px', border:'none', borderRadius:13,
             background:t.btnGrad, color:'#fff', fontWeight:900, fontSize:16, cursor:'pointer',
             fontFamily:"'Cinzel',serif", letterSpacing:'0.5px',
             boxShadow:`0 5px 22px ${t.shadow}`,
-            opacity:satsangSubmitting?0.7:1, transition:'all 0.3s' }}>
+            opacity:(satsangSubmitting || (satsangForm.date && satsangForm.time && isDupSpecial(satsangForm.date, satsangForm.time)))?0.6:1, transition:'all 0.3s' }}>
           {satsangSubmitting ? '⏳ Booking...' : `${t.icon}  Book ${t.label}`}
         </button>
       </div>

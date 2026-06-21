@@ -98,7 +98,7 @@ export default function App({ onChangeSuk, deepLink = {}, currentUser = null, on
     satsangSubmitting,
     satsangConfirm, setSatsangConfirm,
     handleSatsangSubmit, handleSpecialSubmit,
-  } = useSatsangBooking({ isConfigured, fetchSatsangBookings, fetchBhadraBookings, fetchMatriBookings, fetchSavanBookings })
+  } = useSatsangBooking({ isConfigured, fetchSatsangBookings, fetchBhadraBookings, fetchMatriBookings, fetchSavanBookings, satsangBookings, bhadraBookings, matriBookings, savanBookings })
 
   const {
     buildShareMsgPlain, buildShareMsg, handleCopy,

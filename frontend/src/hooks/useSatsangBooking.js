@@ -7,7 +7,7 @@ import { getDayName, getTodayStr } from '../utils/utils.js'
 import state from '../config/activeSuk.js'
 import { sukLabel } from '../config/sukConfig.js'
 
-export function useSatsangBooking({ isConfigured, fetchSatsangBookings, fetchBhadraBookings, fetchMatriBookings, fetchSavanBookings }) {
+export function useSatsangBooking({ isConfigured, fetchSatsangBookings, fetchBhadraBookings, fetchMatriBookings, fetchSavanBookings, satsangBookings = [], bhadraBookings = [], matriBookings = [], savanBookings = [] }) {
   const EMPTY_FORM = { name:'', mobile:'', venue:'', date:'', time:'', hostedBy:'', mapsLink:'', occasion:'' }
 
   const [satsangForm,       setSatsangForm]       = React.useState(EMPTY_FORM)
@@ -37,6 +37,12 @@ export function useSatsangBooking({ isConfigured, fetchSatsangBookings, fetchBha
     if (!time.trim())   { triggerSatsangError('⚠️ Please enter the time.'); return }
     if (!venue.trim())  { triggerSatsangError('⚠️ Please enter the venue.'); return }
     if (!isConfigured)  { triggerSatsangError('⚠️ Please configure the Satsang Script URL.'); return }
+
+    const dupBooking = satsangBookings.find(b => b.date === date && b.time.trim().toLowerCase() === time.trim().toLowerCase())
+    if (dupBooking) {
+      triggerSatsangError(`⚠️ This date & time is already booked by ${dupBooking.name || 'someone'}. Please select a different time.`)
+      return
+    }
 
     setSatsangSubmitting(true)
     try {
@@ -78,6 +84,14 @@ export function useSatsangBooking({ isConfigured, fetchSatsangBookings, fetchBha
     if (!time.trim())   { triggerSatsangError('⚠️ Please enter the time.'); return }
     if (!venue.trim())  { triggerSatsangError('⚠️ Please enter the venue.'); return }
     if (!isConfigured)  { triggerSatsangError('⚠️ Please configure the Script URL.'); return }
+
+    const specialBookingsMap = { bhadra: bhadraBookings, matri: matriBookings, savan: savanBookings }
+    const existingForType = specialBookingsMap[bookMode] || []
+    const dupBooking = existingForType.find(b => b.date === date && b.time.trim().toLowerCase() === time.trim().toLowerCase())
+    if (dupBooking) {
+      triggerSatsangError(`⚠️ This date & time is already booked by ${dupBooking.name || 'someone'} for ${t.label}. Please select a different time.`)
+      return
+    }
 
     setSatsangSubmitting(true)
     try {
