@@ -213,10 +213,12 @@ function PrayerForm({ form, setForm, error, shake, submitting, isSlotTaken, getS
       </div>
 
       <div>
-        <label className="divine-label">📍 Location</label>
-        <input className="divine-input"
+        <label className="divine-label">📍 Address</label>
+        <textarea className="divine-input"
           placeholder="Type location name  OR  paste Google Maps link"
           value={form.place}
+          rows={2}
+          style={{ resize:'none', fontFamily:'inherit', lineHeight:1.4 }}
           onChange={e => {
             const v = e.target.value
             const isLink = v.startsWith('http') || v.includes('maps.google') || v.includes('goo.gl') || v.includes('maps.app')
@@ -375,8 +377,60 @@ function SatsangForm({ satsangForm, setSatsangForm, satsangError, setSatsangErro
       {[
         { label:'👤 Host Name',        key:'name',     placeholder:'Name of the person hosting',         type:'text' },
         { label:'📱 Mobile Number',    key:'mobile',   placeholder:'10-digit mobile',                    type:'tel',  maxLength:10 },
+      ].map(({ label, key, placeholder, type, maxLength }) => (
+        <div key={key}>
+          <label className="divine-label" style={{ color:'rgba(120,53,15,0.7)' }}>{label}</label>
+          <input className="divine-input" placeholder={placeholder} type={type}
+            maxLength={maxLength}
+            value={satsangForm[key]}
+            style={{ borderColor:'rgba(217,119,6,0.3)' }}
+            onChange={e => { setSatsangError(''); setSatsangForm({...satsangForm, [key]: key==='mobile' ? e.target.value.replace(/[^0-9]/g,'') : e.target.value }) }}/>
+        </div>
+      ))}
+
+      <div>
+        <label className="divine-label" style={{ color:'rgba(120,53,15,0.7)' }}>🌐 Find Venue Location</label>
+        <LocationPicker color="#92400e"
+          placeholder="Search venue — area, landmark, address…"
+          onPick={({ address, mapsLink }) => setSatsangForm(prev => ({
+            ...prev,
+            venue:    address  || prev.venue,
+            mapsLink: mapsLink || prev.mapsLink,
+          }))}/>
+      </div>
+
+      <div>
+        <label className="divine-label" style={{ color:'rgba(120,53,15,0.7)' }}>📍 Venue / Address</label>
+        <textarea className="divine-input" placeholder="Full address of the Satsang venue"
+          value={satsangForm.venue}
+          rows={2}
+          style={{ borderColor:'rgba(217,119,6,0.3)', resize:'none', fontFamily:'inherit', lineHeight:1.4 }}
+          onChange={e => {
+            const v = e.target.value
+            setSatsangError('')
+            const isLink = v.startsWith('http') || v.includes('maps.google') || v.includes('goo.gl') || v.includes('maps.app')
+            setSatsangForm({...satsangForm, venue:v, mapsLink: isLink ? v : satsangForm.mapsLink})
+          }}/>
+      </div>
+
+      <div>
+        <label className="divine-label" style={{ color:'rgba(120,53,15,0.7)' }}>📅 Date</label>
+        <input type="date" className="divine-input" value={satsangForm.date} min={getTodayStr()}
+          style={{ fontSize:13, width:'100%', cursor:'pointer', borderColor:'rgba(217,119,6,0.3)' }}
+          onChange={e => { setSatsangError(''); setSatsangForm({...satsangForm, date:e.target.value}) }}/>
+        <div style={{ fontSize:10, color:'rgba(120,53,15,0.45)', marginTop:5, paddingLeft:2 }}>
+          ☝️ Tap a chip below for quick pick, or use the calendar above
+        </div>
+        <div style={{ marginTop:6 }}>
+          <EventDateChips
+            bookings={satsangBookings} value={satsangForm.date}
+            onChange={d => { setSatsangError(''); setSatsangForm({...satsangForm, date:d}) }}
+            color="#92400e" idPrefix="satChipScroll" days={14}/>
+        </div>
+      </div>
+
+      {[
         { label:'⏰ Time',             key:'time',     placeholder:'e.g. 4:30 PM onwards',               type:'text' },
-        { label:'📍 Venue / Address',  key:'venue',    placeholder:'Full address of the Satsang venue',  type:'text' },
         { label:'📌 Google Maps Link (optional)', key:'mapsLink', placeholder:'Paste Google Maps link', type:'text' },
         { label:'🪔 Occasion (optional)', key:'occasion', placeholder:'e.g. Birthday, Anniversary, Monthly Satsang', type:'text' },
         { label:'🙏 Hosted By (optional)', key:'hostedBy', placeholder:'e.g. Bannerghatta SUK', type:'text' },
@@ -395,33 +449,6 @@ function SatsangForm({ satsangForm, setSatsangForm, satsangError, setSatsangErro
           )}
         </div>
       ))}
-
-      <div>
-        <label className="divine-label" style={{ color:'rgba(120,53,15,0.7)' }}>📅 Date</label>
-        <input type="date" className="divine-input" value={satsangForm.date} min={getTodayStr()}
-          style={{ fontSize:13, width:'100%', cursor:'pointer', borderColor:'rgba(217,119,6,0.3)' }}
-          onChange={e => { setSatsangError(''); setSatsangForm({...satsangForm, date:e.target.value}) }}/>
-        <div style={{ fontSize:10, color:'rgba(120,53,15,0.45)', marginTop:5, paddingLeft:2 }}>
-          ☝️ Tap a chip below for quick pick, or use the calendar above
-        </div>
-        <div style={{ marginTop:6 }}>
-          <EventDateChips
-            bookings={satsangBookings} value={satsangForm.date}
-            onChange={d => { setSatsangError(''); setSatsangForm({...satsangForm, date:d}) }}
-            color="#92400e" idPrefix="satChipScroll" days={14}/>
-        </div>
-      </div>
-
-      <div>
-        <label className="divine-label" style={{ color:'rgba(120,53,15,0.7)' }}>🌐 Find Venue Location</label>
-        <LocationPicker color="#92400e"
-          placeholder="Search venue — area, landmark, address…"
-          onPick={({ address, mapsLink }) => setSatsangForm(prev => ({
-            ...prev,
-            venue:    address  || prev.venue,
-            mapsLink: mapsLink || prev.mapsLink,
-          }))}/>
-      </div>
 
       <div style={{ marginTop:8 }}>
         <button onClick={handleSatsangSubmit} disabled={satsangSubmitting}
@@ -491,8 +518,60 @@ function SpecialEventForm({ bookMode, info: t, satsangForm, setSatsangForm, sats
       {[
         { label:'👤 Host Name',       key:'name',   placeholder:'Name of the person hosting', type:'text' },
         { label:'📱 Mobile Number',   key:'mobile', placeholder:'10-digit mobile',             type:'tel', maxLength:10 },
+      ].map(({ label, key, placeholder, type, maxLength }) => (
+        <div key={key}>
+          <label className="divine-label" style={{ color:`${t.color}bb` }}>{label}</label>
+          <input className="divine-input" placeholder={placeholder} type={type}
+            maxLength={maxLength}
+            value={satsangForm[key]}
+            style={{ borderColor:t.border }}
+            onChange={e => { setSatsangError(''); setSatsangForm({...satsangForm, [key]: key==='mobile' ? e.target.value.replace(/[^0-9]/g,'') : e.target.value }) }}/>
+        </div>
+      ))}
+
+      <div>
+        <label className="divine-label" style={{ color:`${t.color}bb` }}>🌐 Find Venue Location</label>
+        <LocationPicker color={t.color}
+          placeholder="Search venue — area, landmark, address…"
+          onPick={({ address, mapsLink }) => setSatsangForm(prev => ({
+            ...prev,
+            venue:    address  || prev.venue,
+            mapsLink: mapsLink || prev.mapsLink,
+          }))}/>
+      </div>
+
+      <div>
+        <label className="divine-label" style={{ color:`${t.color}bb` }}>📍 Venue / Address</label>
+        <textarea className="divine-input" placeholder="Full address of the venue"
+          value={satsangForm.venue}
+          rows={2}
+          style={{ borderColor:t.border, resize:'none', fontFamily:'inherit', lineHeight:1.4 }}
+          onChange={e => {
+            const v = e.target.value
+            setSatsangError('')
+            const isLink = v.startsWith('http') || v.includes('maps.google') || v.includes('goo.gl') || v.includes('maps.app')
+            setSatsangForm({...satsangForm, venue:v, mapsLink: isLink ? v : satsangForm.mapsLink})
+          }}/>
+      </div>
+
+      <div>
+        <label className="divine-label" style={{ color:`${t.color}bb` }}>📅 Date</label>
+        <input type="date" className="divine-input" value={satsangForm.date} min={getTodayStr()}
+          style={{ fontSize:13, width:'100%', cursor:'pointer', borderColor:t.border }}
+          onChange={e => { setSatsangError(''); setSatsangForm({...satsangForm, date:e.target.value}) }}/>
+        <div style={{ fontSize:10, color:`${t.color}77`, marginTop:5, paddingLeft:2 }}>
+          ☝️ Tap a chip below for quick pick, or use the calendar above
+        </div>
+        <div style={{ marginTop:6 }}>
+          <EventDateChips
+            bookings={t.bookings} value={satsangForm.date}
+            onChange={d => { setSatsangError(''); setSatsangForm({...satsangForm, date:d}) }}
+            color={t.color} idPrefix={`${bookMode}ChipScroll`} days={14}/>
+        </div>
+      </div>
+
+      {[
         { label:'⏰ Time',            key:'time',   placeholder:'e.g. 4:30 PM onwards',        type:'text' },
-        { label:'📍 Venue / Address', key:'venue',  placeholder:'Full address of the venue',   type:'text' },
         { label:'📌 Google Maps Link (optional)', key:'mapsLink', placeholder:'Paste Google Maps link', type:'text' },
         { label:'🪔 Occasion (optional)', key:'occasion', placeholder:'e.g. Special occasion', type:'text' },
         { label:'🙏 Hosted By (optional)', key:'hostedBy', placeholder:'e.g. Bannerghatta SUK', type:'text' },
@@ -512,33 +591,6 @@ function SpecialEventForm({ bookMode, info: t, satsangForm, setSatsangForm, sats
           )}
         </div>
       ))}
-
-      <div>
-        <label className="divine-label" style={{ color:`${t.color}bb` }}>📅 Date</label>
-        <input type="date" className="divine-input" value={satsangForm.date} min={getTodayStr()}
-          style={{ fontSize:13, width:'100%', cursor:'pointer', borderColor:t.border }}
-          onChange={e => { setSatsangError(''); setSatsangForm({...satsangForm, date:e.target.value}) }}/>
-        <div style={{ fontSize:10, color:`${t.color}77`, marginTop:5, paddingLeft:2 }}>
-          ☝️ Tap a chip below for quick pick, or use the calendar above
-        </div>
-        <div style={{ marginTop:6 }}>
-          <EventDateChips
-            bookings={t.bookings} value={satsangForm.date}
-            onChange={d => { setSatsangError(''); setSatsangForm({...satsangForm, date:d}) }}
-            color={t.color} idPrefix={`${bookMode}ChipScroll`} days={14}/>
-        </div>
-      </div>
-
-      <div>
-        <label className="divine-label" style={{ color:`${t.color}bb` }}>🌐 Find Venue Location</label>
-        <LocationPicker color={t.color}
-          placeholder="Search venue — area, landmark, address…"
-          onPick={({ address, mapsLink }) => setSatsangForm(prev => ({
-            ...prev,
-            venue:    address  || prev.venue,
-            mapsLink: mapsLink || prev.mapsLink,
-          }))}/>
-      </div>
 
       <div style={{ marginTop:8 }}>
         <button onClick={handleSpecialSubmit} disabled={satsangSubmitting}
