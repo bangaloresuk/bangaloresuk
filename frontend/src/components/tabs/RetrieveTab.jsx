@@ -252,9 +252,8 @@ function BookingResultCard({ b, cancelling, handleCancelBooking, handleCancelSat
             {/* Address edit (prayer only) */}
             {editingAddress === b.id ? (
               <div style={{ marginTop:10, display:'flex', flexDirection:'column', gap:8 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:'rgba(29,78,216,0.6)', textTransform:'uppercase', letterSpacing:'0.8px' }}>
-                  🌐 Find Location
-                </div>
+                <div style={{ fontSize:11, fontWeight:700, color:'rgba(29,78,216,0.6)',
+                  textTransform:'uppercase', letterSpacing:'0.8px' }}>🌐 Find Location</div>
                 <LocationPicker color="#1d4ed8"
                   placeholder="Search area, landmark, address…"
                   onPick={({ address, mapsLink }) => {
