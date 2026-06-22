@@ -371,33 +371,6 @@ function SatsangForm({ satsangForm, setSatsangForm, satsangError, setSatsangErro
         <div style={{ height:1, background:'linear-gradient(90deg,transparent,rgba(217,119,6,0.5),transparent)', marginTop:10 }}/>
       </div>
 
-      {existingForType.length > 0 && (
-        <div>
-          <div style={{ fontSize:11, fontWeight:700, color:'#92400e', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>
-            🪔 {existingForType.length} slot{existingForType.length!==1?'s':''} already booked
-          </div>
-          <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
-            {[...existingForType].sort((a,b)=>a.date.localeCompare(b.date)).map(b => {
-              const dd     = (b.date||'').slice(8,10)
-              const dayIdx = b.date ? new Date(b.date+'T00:00:00').getDay() : -1
-              const dayN   = dayIdx>=0?['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dayIdx]:''
-              return (
-                <div key={b.id} style={{ display:'flex', flexDirection:'column', alignItems:'center',
-                  padding:'7px 10px', borderRadius:12, minWidth:52,
-                  background:'rgba(217,119,6,0.06)', border:'2px solid rgba(217,119,6,0.2)' }}>
-                  <div style={{ fontSize:9, fontWeight:700, color:'rgba(120,53,15,0.6)', textTransform:'uppercase', letterSpacing:'0.4px' }}>{dayN}</div>
-                  <div style={{ fontSize:15, fontWeight:900, color:'#92400e', lineHeight:1.2 }}>{dd}</div>
-                  <div style={{ fontSize:8, fontWeight:800, color:'#92400e', marginTop:2, textAlign:'center', maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{cleanTime(b.time)||'—'}</div>
-                  <div style={{ fontSize:8, color:'rgba(120,53,15,0.55)', marginTop:1, maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{(b.name||'').split(' ')[0]}</div>
-                  <div style={{ width:6, height:6, borderRadius:'50%', background:'#92400e', marginTop:4 }}/>
-                </div>
-              )
-            })}
-          </div>
-          <div style={{ height:1, background:'rgba(217,119,6,0.13)', margin:'8px 0' }}/>
-        </div>
-      )}
-
       {satsangError && (
         <div className={satsangShake?'shake':''} style={{ padding:'11px 14px', borderRadius:10,
           fontSize:13, fontWeight:600, background:'#fef3c7', color:'#92400e', whiteSpace:'pre-line' }}>
@@ -536,33 +509,6 @@ function SpecialEventForm({ bookMode, info: t, satsangForm, setSatsangForm, sats
         </div>
         <div style={{ height:1, background:`linear-gradient(90deg,transparent,${t.color}66,transparent)`, marginTop:10 }}/>
       </div>
-
-      {existingForType.length > 0 && (
-        <div>
-          <div style={{ fontSize:11, fontWeight:700, color:t.color, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>
-            {t.icon} {existingForType.length} slot{existingForType.length!==1?'s':''} already booked
-          </div>
-          <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
-            {[...existingForType].sort((a,b)=>a.date.localeCompare(b.date)).map(b => {
-              const dd     = (b.date||'').slice(8,10)
-              const dayIdx = b.date ? new Date(b.date+'T00:00:00').getDay() : -1
-              const dayN   = dayIdx>=0?['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dayIdx]:''
-              return (
-                <div key={b.id} style={{ display:'flex', flexDirection:'column', alignItems:'center',
-                  padding:'7px 10px', borderRadius:12, minWidth:52,
-                  background:t.bg, border:`2px solid ${t.border}` }}>
-                  <div style={{ fontSize:9, fontWeight:700, color:`${t.color}99`, textTransform:'uppercase', letterSpacing:'0.4px' }}>{dayN}</div>
-                  <div style={{ fontSize:15, fontWeight:900, color:t.color, lineHeight:1.2 }}>{dd}</div>
-                  <div style={{ fontSize:8, fontWeight:800, color:t.color, marginTop:2, textAlign:'center', maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{cleanTime(b.time)||'—'}</div>
-                  <div style={{ fontSize:8, color:`${t.color}88`, marginTop:1, maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{(b.name||'').split(' ')[0]}</div>
-                  <div style={{ width:6, height:6, borderRadius:'50%', background:t.color, marginTop:4 }}/>
-                </div>
-              )
-            })}
-          </div>
-          <div style={{ height:1, background:`${t.color}22`, margin:'8px 0' }}/>
-        </div>
-      )}
 
       {satsangError && (
         <div className={satsangShake?'shake':''} style={{ padding:'11px 14px', borderRadius:10,

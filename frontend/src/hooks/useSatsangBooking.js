@@ -44,6 +44,12 @@ export function useSatsangBooking({ isConfigured, fetchSatsangBookings, fetchBha
       return
     }
 
+    const mobileDup = satsangBookings.find(b => b.date === date && b.mobile.trim() === mobile.trim())
+    if (mobileDup) {
+      triggerSatsangError(`⚠️ This mobile number has already booked a Satsang on this date. Only one booking per person per date is allowed.`)
+      return
+    }
+
     setSatsangSubmitting(true)
     try {
       const result = await satsangApi.post({
@@ -90,6 +96,12 @@ export function useSatsangBooking({ isConfigured, fetchSatsangBookings, fetchBha
     const dupBooking = existingForType.find(b => b.date === date && b.time.trim().toLowerCase() === time.trim().toLowerCase())
     if (dupBooking) {
       triggerSatsangError(`⚠️ This date & time is already booked by ${dupBooking.name || 'someone'} for ${t.label}. Please select a different time.`)
+      return
+    }
+
+    const mobileDup = existingForType.find(b => b.date === date && b.mobile.trim() === mobile.trim())
+    if (mobileDup) {
+      triggerSatsangError(`⚠️ This mobile number has already booked ${t.label} on this date. Only one booking per person per date is allowed.`)
       return
     }
 
