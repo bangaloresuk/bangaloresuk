@@ -387,7 +387,7 @@ function SatsangForm({ satsangForm, setSatsangForm, satsangError, setSatsangErro
                   background:'rgba(217,119,6,0.06)', border:'2px solid rgba(217,119,6,0.2)' }}>
                   <div style={{ fontSize:9, fontWeight:700, color:'rgba(120,53,15,0.6)', textTransform:'uppercase', letterSpacing:'0.4px' }}>{dayN}</div>
                   <div style={{ fontSize:15, fontWeight:900, color:'#92400e', lineHeight:1.2 }}>{dd}</div>
-                  <div style={{ fontSize:8, fontWeight:800, color:'#92400e', marginTop:2, textAlign:'center', maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{b.time||'—'}</div>
+                  <div style={{ fontSize:8, fontWeight:800, color:'#92400e', marginTop:2, textAlign:'center', maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{cleanTime(b.time)||'—'}</div>
                   <div style={{ fontSize:8, color:'rgba(120,53,15,0.55)', marginTop:1, maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{(b.name||'').split(' ')[0]}</div>
                   <div style={{ width:6, height:6, borderRadius:'50%', background:'#92400e', marginTop:4 }}/>
                 </div>
@@ -440,6 +440,23 @@ function SatsangForm({ satsangForm, setSatsangForm, satsangError, setSatsangErro
             onChange={d => { setSatsangError(''); setSatsangForm({...satsangForm, date:d}) }}
             color="#92400e" idPrefix="satChipScroll" days={14}/>
         </div>
+        {satsangForm.date && existingForType.filter(b => b.date === satsangForm.date).length > 0 && (
+          <div className="fade-in" style={{ marginTop:10, background:'rgba(217,119,6,0.07)',
+            border:'1px solid rgba(217,119,6,0.25)', borderRadius:12, padding:'12px 14px' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#92400e', marginBottom:8 }}>
+              🪔 Already booked on this date:
+            </div>
+            {existingForType.filter(b => b.date === satsangForm.date).map(b => (
+              <div key={b.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                padding:'6px 10px', borderRadius:8, marginBottom:4,
+                background:'rgba(255,255,255,0.7)', border:'1px solid rgba(217,119,6,0.15)' }}>
+                <div style={{ fontSize:13, fontWeight:700, color:'#78350f' }}>{b.name}</div>
+                <div style={{ fontSize:12, fontWeight:600, color:'#92400e', background:'rgba(217,119,6,0.12)',
+                  padding:'2px 8px', borderRadius:6 }}>{cleanTime(b.time) || b.time}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div>
@@ -536,7 +553,7 @@ function SpecialEventForm({ bookMode, info: t, satsangForm, setSatsangForm, sats
                   background:t.bg, border:`2px solid ${t.border}` }}>
                   <div style={{ fontSize:9, fontWeight:700, color:`${t.color}99`, textTransform:'uppercase', letterSpacing:'0.4px' }}>{dayN}</div>
                   <div style={{ fontSize:15, fontWeight:900, color:t.color, lineHeight:1.2 }}>{dd}</div>
-                  <div style={{ fontSize:8, fontWeight:800, color:t.color, marginTop:2, textAlign:'center', maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{b.time||'—'}</div>
+                  <div style={{ fontSize:8, fontWeight:800, color:t.color, marginTop:2, textAlign:'center', maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{cleanTime(b.time)||'—'}</div>
                   <div style={{ fontSize:8, color:`${t.color}88`, marginTop:1, maxWidth:60, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>{(b.name||'').split(' ')[0]}</div>
                   <div style={{ width:6, height:6, borderRadius:'50%', background:t.color, marginTop:4 }}/>
                 </div>
@@ -589,6 +606,23 @@ function SpecialEventForm({ bookMode, info: t, satsangForm, setSatsangForm, sats
             onChange={d => { setSatsangError(''); setSatsangForm({...satsangForm, date:d}) }}
             color={t.color} idPrefix={`${bookMode}ChipScroll`} days={14}/>
         </div>
+        {satsangForm.date && existingForType.filter(b => b.date === satsangForm.date).length > 0 && (
+          <div className="fade-in" style={{ marginTop:10, background:t.bg,
+            border:`1px solid ${t.border}`, borderRadius:12, padding:'12px 14px' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:t.color, marginBottom:8 }}>
+              {t.icon} Already booked on this date:
+            </div>
+            {existingForType.filter(b => b.date === satsangForm.date).map(b => (
+              <div key={b.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center',
+                padding:'6px 10px', borderRadius:8, marginBottom:4,
+                background:'rgba(255,255,255,0.7)', border:`1px solid ${t.border}` }}>
+                <div style={{ fontSize:13, fontWeight:700, color:t.color }}>{b.name}</div>
+                <div style={{ fontSize:12, fontWeight:600, color:t.color, background:`${t.color}18`,
+                  padding:'2px 8px', borderRadius:6 }}>{cleanTime(b.time) || b.time}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div>
