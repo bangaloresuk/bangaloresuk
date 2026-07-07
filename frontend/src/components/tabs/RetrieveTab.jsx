@@ -28,7 +28,7 @@ export default function RetrieveTab({
   editAddressVal, setEditAddressVal,
   editMapsVal, setEditMapsVal,
   savingAddress, addressMsg,
-  handleUpdateAddress,
+  handleUpdateAddress, handleUpdateVenue,
 }) {
   const todayStr = getTodayStr()
 
@@ -134,6 +134,7 @@ export default function RetrieveTab({
                 editMapsVal={editMapsVal} setEditMapsVal={setEditMapsVal}
                 savingAddress={savingAddress} addressMsg={addressMsg}
                 handleUpdateAddress={handleUpdateAddress}
+                handleUpdateVenue={handleUpdateVenue}
                 isFuture={true}
               />
             ))}
@@ -192,7 +193,7 @@ function BookingResultCard({ b, cancelling, handleCancelBooking, handleCancelSat
   buildShareMsgPlain, buildShareMsg, handleCopy,
   buildSatsangShareMsgPlain, buildSatsangShareMsg, handleSatsangCopy,
   editingAddress, setEditingAddress, editAddressVal, setEditAddressVal,
-  editMapsVal, setEditMapsVal, savingAddress, addressMsg, handleUpdateAddress, isFuture }) {
+  editMapsVal, setEditMapsVal, savingAddress, addressMsg, handleUpdateAddress, handleUpdateVenue, isFuture }) {
 
   const isSatsangType = ['satsang','bhadra','matri','savan'].includes(b._type)
   const color = isSatsangType ? TYPE_COLORS[b._type] : '#1d4ed8'
@@ -235,6 +236,48 @@ function BookingResultCard({ b, cancelling, handleCancelBooking, handleCancelSat
             {b.mapsLink && (
               <a href={b.mapsLink} target="_blank" rel="noopener noreferrer"
                 style={{ fontSize:11, color, display:'block', marginBottom:2 }}>📌 View on Maps</a>
+            )}
+
+            {/* Venue / address edit (satsang, bhadra, matri, savan) */}
+            {editingAddress === b.id ? (
+              <div style={{ marginTop:10, display:'flex', flexDirection:'column', gap:8 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:`${color}99`,
+                  textTransform:'uppercase', letterSpacing:'0.8px' }}>🌐 Find Location</div>
+                <LocationPicker color={color}
+                  placeholder="Search venue — area, landmark, address…"
+                  onPick={({ address, mapsLink }) => {
+                    if (address)  setEditAddressVal(address)
+                    if (mapsLink) setEditMapsVal(mapsLink)
+                  }}/>
+                <input className="divine-input" placeholder="Venue / address" value={editAddressVal}
+                  onChange={e => setEditAddressVal(e.target.value)} style={{ fontSize:12 }}/>
+                <input className="divine-input" placeholder="Google Maps link (optional)" value={editMapsVal}
+                  onChange={e => setEditMapsVal(e.target.value)} style={{ fontSize:12 }}/>
+                <div style={{ display:'flex', gap:6 }}>
+                  <button disabled={savingAddress}
+                    onClick={() => handleUpdateVenue(b.id, b._type, editAddressVal, editMapsVal)}
+                    style={{ flex:1, padding:'8px', border:'none', borderRadius:8,
+                      background:color, color:'#fff', fontWeight:700, fontSize:12, cursor:'pointer' }}>
+                    {savingAddress ? '⏳ Saving...' : '✓ Save'}
+                  </button>
+                  <button onClick={() => setEditingAddress(null)}
+                    style={{ flex:1, padding:'8px', border:'1px solid #e5e7eb', borderRadius:8,
+                      background:'#fff', color:'#374151', fontWeight:700, fontSize:12, cursor:'pointer' }}>
+                    Cancel
+                  </button>
+                </div>
+                {addressMsg[b.id] && (
+                  <div style={{ fontSize:11, color: addressMsg[b.id].startsWith('Address') ? '#065f46' : '#b91c1c' }}>
+                    {addressMsg[b.id]}
+                  </div>
+                )}
+              </div>
+            ) : isFuture && (
+              <button onClick={() => { setEditingAddress(b.id); setEditAddressVal(b.venue||''); setEditMapsVal(b.mapsLink||'') }}
+                style={{ marginTop:6, fontSize:11, color, background:'none', border:'none',
+                  cursor:'pointer', padding:0, fontWeight:600 }}>
+                ✏️ Edit venue / location
+              </button>
             )}
           </>
         ) : (

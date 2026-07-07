@@ -25,6 +25,7 @@ export const satsangApi = {
   post:   (data) => db.satsang.add(data),
   delete: (id)   => db.satsang.cancel(id),
   cancel: (id)   => db.satsang.cancel(id),  // ← this was missing, App.jsx calls satsangApi.cancel()
+  update: (id, venue, mapsLink) => db.satsang.updateVenue(id, venue, mapsLink),
 }
 
 export const bhadraApi = {
@@ -32,6 +33,7 @@ export const bhadraApi = {
   post:   (data) => db.bhadra.add(data),
   delete: (id)   => db.bhadra.cancel(id),
   cancel: (id)   => db.bhadra.cancel(id),
+  update: (id, venue, mapsLink) => db.bhadra.updateVenue(id, venue, mapsLink),
 }
 
 export const matriApi = {
@@ -39,6 +41,7 @@ export const matriApi = {
   post:   (data) => db.matri.add(data),
   delete: (id)   => db.matri.cancel(id),
   cancel: (id)   => db.matri.cancel(id),
+  update: (id, venue, mapsLink) => db.matri.updateVenue(id, venue, mapsLink),
 }
 
 export const savanApi = {
@@ -46,6 +49,7 @@ export const savanApi = {
   post:   (data) => db.savan.add(data),
   delete: (id)   => db.savan.cancel(id),
   cancel: (id)   => db.savan.cancel(id),
+  update: (id, venue, mapsLink) => db.savan.updateVenue(id, venue, mapsLink),
 }
 
 export const photoApi = {

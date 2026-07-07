@@ -44,24 +44,28 @@ export const googleSheetsProvider = {
     getAll: ()     => apiCall('GET',    '/satsang/satsang'),
     add:    (data) => apiCall('POST',   '/satsang/satsang', { ...data, suk_key: _apiKey }),
     cancel: (id)   => apiCall('DELETE', `/satsang/satsang/${id}`),
+    updateVenue: (id, venue, mapsLink) => apiCall('PATCH', `/satsang/satsang/${id}/venue`, { id, venue, mapsLink, suk_key: _apiKey }),
   },
 
   bhadra: {
     getAll: ()     => apiCall('GET',    '/bhadra/bhadra'),
     add:    (data) => apiCall('POST',   '/bhadra/bhadra', { ...data, suk_key: _apiKey }),
     cancel: (id)   => apiCall('DELETE', `/bhadra/bhadra/${id}`),
+    updateVenue: (id, venue, mapsLink) => apiCall('PATCH', `/bhadra/bhadra/${id}/venue`, { id, venue, mapsLink, suk_key: _apiKey }),
   },
 
   matri: {
     getAll: ()     => apiCall('GET',    '/matri/matri'),
     add:    (data) => apiCall('POST',   '/matri/matri', { ...data, suk_key: _apiKey }),
     cancel: (id)   => apiCall('DELETE', `/matri/matri/${id}`),
+    updateVenue: (id, venue, mapsLink) => apiCall('PATCH', `/matri/matri/${id}/venue`, { id, venue, mapsLink, suk_key: _apiKey }),
   },
 
   savan: {
     getAll: ()     => apiCall('GET',    '/savan/savan'),
     add:    (data) => apiCall('POST',   '/savan/savan', { ...data, suk_key: _apiKey }),
     cancel: (id)   => apiCall('DELETE', `/savan/savan/${id}`),
+    updateVenue: (id, venue, mapsLink) => apiCall('PATCH', `/savan/savan/${id}/venue`, { id, venue, mapsLink, suk_key: _apiKey }),
   },
 
   photos: {

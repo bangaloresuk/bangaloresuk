@@ -46,3 +46,13 @@ async def cancel(event_id: str, suk_key: str):
     validate_suk_key(suk_key)
     try: return await gas_post({"action":"delete","id":event_id,"sheetName":SHEET}, suk_key)
     except Exception as e: raise HTTPException(status_code=502, detail=str(e))
+
+@app.patch("/bhadra/{event_id}/venue")
+async def update_venue(event_id: str, payload: dict, suk_key: str):
+    validate_suk_key(suk_key)
+    try:
+        return await gas_post({
+            "action":"updateVenue","id":event_id,"sheetName":SHEET,
+            "venue":payload.get("venue",""),"mapsLink":payload.get("mapsLink",""),
+        }, suk_key)
+    except Exception as e: raise HTTPException(status_code=502, detail=str(e))

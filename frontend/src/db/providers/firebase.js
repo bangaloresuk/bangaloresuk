@@ -38,6 +38,28 @@ export const firebaseProvider = {
     getAll: ()     => Promise.reject('Firebase not yet configured'),
     add:    (data) => Promise.reject('Firebase not yet configured'),
     cancel: (id)   => Promise.reject('Firebase not yet configured'),
+    updateVenue: (id, venue, mapsLink) => Promise.reject('Firebase not yet configured'),
+  },
+
+  bhadra: {
+    getAll: ()     => Promise.reject('Firebase not yet configured'),
+    add:    (data) => Promise.reject('Firebase not yet configured'),
+    cancel: (id)   => Promise.reject('Firebase not yet configured'),
+    updateVenue: (id, venue, mapsLink) => Promise.reject('Firebase not yet configured'),
+  },
+
+  matri: {
+    getAll: ()     => Promise.reject('Firebase not yet configured'),
+    add:    (data) => Promise.reject('Firebase not yet configured'),
+    cancel: (id)   => Promise.reject('Firebase not yet configured'),
+    updateVenue: (id, venue, mapsLink) => Promise.reject('Firebase not yet configured'),
+  },
+
+  savan: {
+    getAll: ()     => Promise.reject('Firebase not yet configured'),
+    add:    (data) => Promise.reject('Firebase not yet configured'),
+    cancel: (id)   => Promise.reject('Firebase not yet configured'),
+    updateVenue: (id, venue, mapsLink) => Promise.reject('Firebase not yet configured'),
   },
 
   photos: {

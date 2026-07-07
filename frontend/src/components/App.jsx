@@ -82,7 +82,7 @@ export default function App({ onChangeSuk, deepLink = {}, currentUser = null, on
     retrieveTypeFilter, setRetrieveTypeFilter, showRetrievePast, setShowRetrievePast,
     handleShareLookup,
     editingAddress, setEditingAddress, editAddressVal, setEditAddressVal,
-    editMapsVal, setEditMapsVal, savingAddress, addressMsg, handleUpdateAddress,
+    editMapsVal, setEditMapsVal, savingAddress, addressMsg, handleUpdateAddress, handleUpdateVenue,
     fetchBookings, fetchSatsangBookings, fetchBhadraBookings, fetchMatriBookings, fetchSavanBookings,
   } = useBookings({ isConfigured, feat })
 
@@ -364,6 +364,7 @@ export default function App({ onChangeSuk, deepLink = {}, currentUser = null, on
           editMapsVal={editMapsVal} setEditMapsVal={setEditMapsVal}
           savingAddress={savingAddress} addressMsg={addressMsg}
           handleUpdateAddress={handleUpdateAddress}
+          handleUpdateVenue={handleUpdateVenue}
         />
       )}
 

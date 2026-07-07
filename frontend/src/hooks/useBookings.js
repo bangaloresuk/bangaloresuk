@@ -253,7 +253,7 @@ export function useBookings({ isConfigured, feat }) {
     }
   }
 
-  // ── Update address ────────────────────────────────────────
+  // ── Update address (prayer) ───────────────────────────────
   const handleUpdateAddress = async (bookingId, newAddress, newMapsLink) => {
     setSavingAddress(true)
     try {
@@ -265,6 +265,32 @@ export function useBookings({ isConfigured, feat }) {
         setAddressMsg(prev => ({ ...prev, [bookingId]: 'Address updated!' }))
         setEditingAddress(null); setEditAddressVal(''); setEditMapsVal('')
         fetchBookings()
+        setTimeout(() => setAddressMsg(prev => { const n = { ...prev }; delete n[bookingId]; return n }), 3000)
+      } else {
+        setAddressMsg(prev => ({ ...prev, [bookingId]: 'Error: ' + (result.message || 'Update failed') }))
+      }
+    } catch (e) {
+      setAddressMsg(prev => ({ ...prev, [bookingId]: 'Network error. Please try again.' }))
+    }
+    setSavingAddress(false)
+  }
+
+  // ── Update venue (satsang / bhadra / matri / savan) ───────
+  const handleUpdateVenue = async (bookingId, eventType, newVenue, newMapsLink) => {
+    const API   = { satsang:satsangApi, bhadra:bhadraApi, matri:matriApi, savan:savanApi }
+    const FETCH = { satsang:fetchSatsangBookings, bhadra:fetchBhadraBookings, matri:fetchMatriBookings, savan:fetchSavanBookings }
+    const apiRef   = API[eventType]   || satsangApi
+    const fetchRef = FETCH[eventType] || fetchSatsangBookings
+    setSavingAddress(true)
+    try {
+      const venue    = newVenue.trim()
+      const mapsLink = (newMapsLink || '').trim()
+      const result = await apiRef.update(bookingId, venue, mapsLink)
+      if (result.success) {
+        setShareResults(prev => prev.map(b => b.id === bookingId ? { ...b, venue, mapsLink } : b))
+        setAddressMsg(prev => ({ ...prev, [bookingId]: 'Address updated!' }))
+        setEditingAddress(null); setEditAddressVal(''); setEditMapsVal('')
+        fetchRef()
         setTimeout(() => setAddressMsg(prev => { const n = { ...prev }; delete n[bookingId]; return n }), 3000)
       } else {
         setAddressMsg(prev => ({ ...prev, [bookingId]: 'Error: ' + (result.message || 'Update failed') }))
@@ -298,7 +324,7 @@ export function useBookings({ isConfigured, feat }) {
     editAddressVal, setEditAddressVal,
     editMapsVal, setEditMapsVal,
     savingAddress, addressMsg,
-    handleUpdateAddress,
+    handleUpdateAddress, handleUpdateVenue,
     // fetchers (exported so tabs can trigger refresh)
     fetchBookings, fetchSatsangBookings, fetchBhadraBookings, fetchMatriBookings, fetchSavanBookings,
   }
