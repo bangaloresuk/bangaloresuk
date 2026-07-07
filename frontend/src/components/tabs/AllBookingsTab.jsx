@@ -32,8 +32,29 @@ export default function AllBookingsTab({
   const [showRange, setShowRange] = React.useState(false)
 
   React.useEffect(() => {
-    if (allBookingsFilter && allBookingsFilter !== 'all') setTypeTab(allBookingsFilter)
+    if (allBookingsFilter && allBookingsFilter !== 'all') {
+      setTypeTab(allBookingsFilter)
+      // Show all time data by activating a full date range
+      setShowRange(true)
+      setDateFrom('2020-01-01')
+      setDateTo('2099-12-31')
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allBookingsFilter])
+
+  React.useEffect(() => {
+    const id = setTimeout(() => {
+      const upcomingCount = allItems.filter(b =>
+        typeTab === 'all' ? true : b._type === typeTab
+      ).filter(b => (b.date||'').startsWith(activeYM) && (b.date||'') >= todayStr).length
+      const pastCount = allItems.filter(b =>
+        typeTab === 'all' ? true : b._type === typeTab
+      ).filter(b => (b.date||'').startsWith(activeYM) && (b.date||'') < todayStr).length
+      setShowPast(upcomingCount === 0 && pastCount > 0)
+    }, 0)
+    return () => clearTimeout(id)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [typeTab, activeYM])
 
   const allItems = [
     ...bookings.map(b        => ({ ...b, _type:'prayer'  })),
@@ -82,13 +103,25 @@ export default function AllBookingsTab({
   }).sort((a, b) => (b.date||'').localeCompare(a.date||''))
 
   const monthItems = allItems.filter(b => (b.date||'').startsWith(activeYM))
+  const upcomingMonthItems = monthItems.filter(b => (b.date||'') >= todayStr)
+  // When a date range is active, show counts for that range so they match
+  // the header chips and the actual list being displayed.
+  // In normal month view, show counts for the active calendar month.
+  const countBase = isRangeActive
+    ? allItems.filter(b => {
+        const d = b.date || ''
+        if (dateFrom && d < dateFrom) return false
+        if (dateTo   && d > dateTo)   return false
+        return true
+      })
+    : monthItems
   const counts = {
-    all:     monthItems.length,
-    prayer:  monthItems.filter(b => b._type==='prayer').length,
-    satsang: monthItems.filter(b => b._type==='satsang').length,
-    bhadra:  monthItems.filter(b => b._type==='bhadra').length,
-    matri:   monthItems.filter(b => b._type==='matri').length,
-    savan:   monthItems.filter(b => b._type==='savan').length,
+    all:     countBase.length,
+    prayer:  countBase.filter(b => b._type==='prayer').length,
+    satsang: countBase.filter(b => b._type==='satsang').length,
+    bhadra:  countBase.filter(b => b._type==='bhadra').length,
+    matri:   countBase.filter(b => b._type==='matri').length,
+    savan:   countBase.filter(b => b._type==='savan').length,
   }
 
   const TYPE_TABS = [
@@ -335,27 +368,29 @@ function PrayerCard({ b, currentUser, cancelling, todayStr, handleCancelBooking,
             <div style={{ fontSize:12, color:'#374151', fontWeight:600 }}>📱 {b.mobile}</div>
             <div style={{ fontSize:11, color:'#6b7280', marginTop:2 }}>🪪 {b.id}</div>
             {b.bookedAt && <div style={{ fontSize:11, color:'#6b7280', marginTop:2 }}>🕒 {b.bookedAt}</div>}
-            <div style={{ marginTop:8, display:'flex', flexDirection:'column', gap:5 }}>
+            <div style={{ marginTop:8 }}>
               <div style={{ fontSize:10, fontWeight:700, color:'rgba(29,78,216,0.5)',
-                textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:2 }}>📤 Share Invitation</div>
-              <a href={`https://wa.me/?text=${buildShareMsg(sc)}`} target="_blank" rel="noopener noreferrer"
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-                  padding:'7px', borderRadius:8, textDecoration:'none',
-                  background:'linear-gradient(135deg,#25D366,#128C7E)', color:'#fff', fontWeight:700, fontSize:12 }}>
-                💬 WhatsApp
-              </a>
-              <a href={`sms:${b.mobile}?body=${buildShareMsg(sc)}`}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-                  padding:'7px', borderRadius:8, textDecoration:'none',
-                  background:'linear-gradient(135deg,#1d4ed8,#3b82f6)', color:'#fff', fontWeight:700, fontSize:12 }}>
-                📱 SMS
-              </a>
-              <button onClick={() => handleCopy(sc)}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-                  padding:'7px', borderRadius:8, border:'none', cursor:'pointer',
-                  background:'rgba(29,78,216,0.08)', color:'#1e3a8a', fontWeight:700, fontSize:12 }}>
-                📋 Copy
-              </button>
+                textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:6 }}>📤 Share Invitation</div>
+              <div style={{ display:'flex', flexDirection:'row', gap:5 }}>
+                <a href={`https://wa.me/?text=${buildShareMsg(sc)}`} target="_blank" rel="noopener noreferrer"
+                  style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:4,
+                    padding:'7px 4px', borderRadius:8, textDecoration:'none',
+                    background:'linear-gradient(135deg,#25D366,#128C7E)', color:'#fff', fontWeight:700, fontSize:11 }}>
+                  💬 WhatsApp
+                </a>
+                <a href={`sms:${b.mobile}?body=${buildShareMsg(sc)}`}
+                  style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:4,
+                    padding:'7px 4px', borderRadius:8, textDecoration:'none',
+                    background:'linear-gradient(135deg,#1d4ed8,#3b82f6)', color:'#fff', fontWeight:700, fontSize:11 }}>
+                  📱 SMS
+                </a>
+                <button onClick={() => handleCopy(sc)}
+                  style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:4,
+                    padding:'7px 4px', borderRadius:8, border:'none', cursor:'pointer',
+                    background:'rgba(29,78,216,0.08)', color:'#1e3a8a', fontWeight:700, fontSize:11 }}>
+                  📋 Copy
+                </button>
+              </div>
             </div>
             {b.date >= todayStr
               ? <button disabled={cancelling === b.id} onClick={() => handleCancelBooking(b.id)}
@@ -410,27 +445,29 @@ function SatsangCard({ b, currentUser, cancelling, todayStr, handleCancelSpecial
             <div style={{ fontSize:12, color:'#374151', fontWeight:600 }}>📱 {b.mobile}</div>
             <div style={{ fontSize:11, color:'#6b7280', marginTop:2 }}>🪪 {b.id}</div>
             {b.bookedAt && <div style={{ fontSize:11, color:'#6b7280', marginTop:2 }}>🕒 {b.bookedAt}</div>}
-            <div style={{ marginTop:8, display:'flex', flexDirection:'column', gap:5 }}>
+            <div style={{ marginTop:8 }}>
               <div style={{ fontSize:10, fontWeight:700, color:tc.adminText,
-                textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:2 }}>📤 Share Invitation</div>
-              <a href={`https://wa.me/?text=${buildSatsangShareMsg(b)}`} target="_blank" rel="noopener noreferrer"
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-                  padding:'7px', borderRadius:8, textDecoration:'none',
-                  background:'linear-gradient(135deg,#25D366,#128C7E)', color:'#fff', fontWeight:700, fontSize:12 }}>
-                💬 WhatsApp
-              </a>
-              <a href={`sms:?body=${buildSatsangShareMsg(b)}`}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-                  padding:'7px', borderRadius:8, textDecoration:'none',
-                  background:tc.cancelGrad, color:'#fff', fontWeight:700, fontSize:12 }}>
-                📱 SMS
-              </a>
-              <button onClick={() => handleSatsangCopy(b)}
-                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6,
-                  padding:'7px', borderRadius:8, border:'none', cursor:'pointer',
-                  background:tc.adminBg, color:tc.adminText, fontWeight:700, fontSize:12 }}>
-                📋 Copy
-              </button>
+                textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:6 }}>📤 Share Invitation</div>
+              <div style={{ display:'flex', flexDirection:'row', gap:5 }}>
+                <a href={`https://wa.me/?text=${buildSatsangShareMsg(b)}`} target="_blank" rel="noopener noreferrer"
+                  style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:4,
+                    padding:'7px 4px', borderRadius:8, textDecoration:'none',
+                    background:'linear-gradient(135deg,#25D366,#128C7E)', color:'#fff', fontWeight:700, fontSize:11 }}>
+                  💬 WhatsApp
+                </a>
+                <a href={`sms:?body=${buildSatsangShareMsg(b)}`}
+                  style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:4,
+                    padding:'7px 4px', borderRadius:8, textDecoration:'none',
+                    background:tc.cancelGrad, color:'#fff', fontWeight:700, fontSize:11 }}>
+                  📱 SMS
+                </a>
+                <button onClick={() => handleSatsangCopy(b)}
+                  style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:4,
+                    padding:'7px 4px', borderRadius:8, border:'none', cursor:'pointer',
+                    background:tc.adminBg, color:tc.adminText, fontWeight:700, fontSize:11 }}>
+                  📋 Copy
+                </button>
+              </div>
             </div>
             {b.date >= todayStr
               ? <button disabled={cancelling === b.id} onClick={() => handleCancelSpecial(b.id, b._type)}
